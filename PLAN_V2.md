@@ -5,7 +5,22 @@ Version 2 focuses on improved UX, cost optimization, and advanced recording mode
 
 ---
 
-## V2 Features
+## V2 Features (Confirmed)
+
+**Scope:** 5 Major Features
+- ✅ Floating Widget
+- ✅ Advanced Recording Modes (Hold/Tap-to-Lock/Hybrid)
+- ✅ Text Injection at Cursor
+- ✅ Audio Speed-Up for Cost Savings
+- ✅ Audio Feedback Sounds
+
+**NOT Included in V2:**
+- ❌ Menu Bar Mode (removed from scope)
+- ❌ Custom Hotkey Configuration (deferred)
+- ❌ Multiple Language Support (future)
+- ❌ Local Whisper Model (future)
+
+---
 
 ### 1. Floating Widget (Wispr Flow Style)
 
@@ -501,22 +516,30 @@ WindowGroup {
 
 ---
 
-## Phased Rollout
+## Implementation Order (Recommended)
 
-### V2.0 (Essential Features)
-- ✅ Floating widget
-- ✅ Recording modes (all three)
-- ✅ Audio feedback sounds
+### Phase 1: Quick Wins (High Impact, Low Effort)
+**Time: 3-5 hours**
+1. **Recording Modes** - Hold/Tap-to-Lock/Hybrid (2-3h)
+2. **Audio Feedback** - Sounds for start/stop/complete (1-2h)
 
-### V2.1 (Advanced)
-- ✅ Text injection
-- ✅ Audio speed-up
+### Phase 2: High Value Features
+**Time: 7-9 hours**
+3. **Floating Widget** - Always-visible status (3-4h)
+4. **Audio Speed-Up** - Cost optimization (3-4h)
 
-### V2.2 (Polish)
-- Cost statistics dashboard
-- Tutorial/onboarding
-- Keyboard shortcuts for all actions
-- Custom themes for widget
+### Phase 3: Advanced Feature
+**Time: 4-5 hours**
+5. **Text Injection** - Type at cursor position (4-5h)
+
+**Total Development Time: 14-19 hours**
+
+### V2 Complete Feature Set
+- ✅ Advanced recording modes with visual feedback
+- ✅ Audio feedback for all actions
+- ✅ Floating widget with waveform visualization
+- ✅ Audio speed-up (1x-2x) with cost savings display
+- ✅ Direct text injection at cursor with clipboard fallback
 
 ---
 
