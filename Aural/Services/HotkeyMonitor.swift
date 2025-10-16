@@ -146,6 +146,10 @@ final class HotkeyMonitor {
         }
     }
 
+    func checkAccessibilityPermissionSilently() -> Bool {
+        return AXIsProcessTrusted()
+    }
+
     private func checkAccessibilityPermission() -> Bool {
         let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
         return AXIsProcessTrustedWithOptions(options)
