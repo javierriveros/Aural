@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct AuralApp: App {
@@ -16,5 +17,6 @@ struct AuralApp: App {
             ContentView()
                 .environment(appState)
         }
+        .modelContainer(for: Transcription.self)
     }
 }
