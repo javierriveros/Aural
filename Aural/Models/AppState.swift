@@ -13,6 +13,7 @@ final class AppState {
     let textInjectionService = TextInjectionService()
     let vocabularyService = VocabularyService()
     let voiceCommandProcessor = VoiceCommandProcessor()
+    let shortcutManager = ShortcutManager()
 
     var modelContext: ModelContext?
 
@@ -60,6 +61,7 @@ final class AppState {
         ])
         setupHotkeyCallbacks()
         setupFloatingWidgetCallbacks()
+        setupShortcutCallbacks()
         if !hotkeyMonitor.startMonitoring() {
             print("Warning: Failed to start hotkey monitoring")
         }
@@ -93,6 +95,35 @@ final class AppState {
 
         hotkeyMonitor.onQuickTap = { [weak self] in
             self?.handleQuickTap()
+        }
+    }
+
+    private func setupShortcutCallbacks() {
+        shortcutManager.onShortcutTriggered = { [weak self] action in
+            self?.handleShortcut(action)
+        }
+    }
+
+    private func handleShortcut(_ action: ShortcutAction) {
+        Task { @MainActor in
+            switch action {
+            case .copyLastTranscription:
+                if let transcription = lastTranscription {
+                    ClipboardService.copy(transcription)
+                }
+            case .showHideWindow:
+                NSApp.activate(ignoringOtherApps: true)
+            case .openSettings:
+                break
+            case .clearHistory:
+                guard let context = modelContext else { return }
+                do {
+                    try context.delete(model: Transcription.self)
+                    try context.save()
+                } catch {
+                    print("Failed to clear history: \(error)")
+                }
+            }
         }
     }
 

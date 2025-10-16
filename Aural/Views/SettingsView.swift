@@ -16,6 +16,7 @@ struct SettingsView: View {
     @State private var customVocabulary = CustomVocabulary()
     @State private var showVocabularyManager = false
     @State private var voiceCommandsEnabled = false
+    @State private var keyboardShortcuts = KeyboardShortcutsConfiguration.default
 
     var body: some View {
         VStack(spacing: 20) {
@@ -184,6 +185,47 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Toggle("Enable Keyboard Shortcuts", isOn: $keyboardShortcuts.isEnabled)
+                        .toggleStyle(.switch)
+
+                    Text("Quick keyboard shortcuts for common actions")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    if keyboardShortcuts.isEnabled {
+                        ForEach(ShortcutAction.allCases) { action in
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(action.rawValue)
+                                        .font(.body)
+                                    Text(action.description)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+
+                                Spacer()
+
+                                if let shortcut = keyboardShortcuts.shortcut(for: action) {
+                                    Text(shortcut.displayString)
+                                        .font(.system(.body, design: .monospaced))
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(Color(nsColor: .controlBackgroundColor))
+                                        .cornerRadius(6)
+                                } else {
+                                    Text("Not Set")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                    }
+                } header: {
+                    Text("Keyboard Shortcuts")
+                        .font(.headline)
+                }
+
+                Section {
                     HStack {
                         Text("Version:")
                         Spacer()
@@ -214,7 +256,7 @@ struct SettingsView: View {
             }
         }
         .padding()
-        .frame(width: 500, height: 750)
+        .frame(width: 500, height: 850)
         .onAppear {
             loadSettings()
         }
@@ -245,6 +287,7 @@ struct SettingsView: View {
         hotkeyConfig = HotkeyRepository().load()
         customVocabulary = VocabularyRepository().load()
         voiceCommandsEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.voiceCommandsEnabled)
+        keyboardShortcuts = KeyboardShortcutsRepository().load()
     }
 
     private func saveSettings() {
@@ -262,6 +305,9 @@ struct SettingsView: View {
 
         VocabularyRepository().save(customVocabulary)
         appState.vocabularyService.reload()
+
+        KeyboardShortcutsRepository().save(keyboardShortcuts)
+        appState.shortcutManager.updateConfiguration(keyboardShortcuts)
     }
 
     private func testAPIKey() {
