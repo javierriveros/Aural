@@ -23,15 +23,32 @@ struct ContentView: View {
                 duration: appState.audioRecorder.recordingDuration
             )
 
-            VStack(spacing: 8) {
-                Text("Press \(appState.hotkeyMonitor.hotkeyConfig.displayString) to record")
-                    .font(.headline)
+            VStack(spacing: Spacing.xs) {
+                HStack(spacing: 6) {
+                    Text("Press")
+                        .font(Typography.callout)
+                        .foregroundStyle(.secondary)
+                    Text(appState.hotkeyMonitor.hotkeyConfig.displayString)
+                        .font(Typography.monoBody)
+                        .fontWeight(.semibold)
+                        .padding(.horizontal, Spacing.sm)
+                        .padding(.vertical, 6)
+                        .background(
+                            BrandColors.gradientSecondary
+                                .opacity(0.2)
+                        )
+                        .cornerRadius(CornerRadius.sm)
+                    Text("to record")
+                        .font(Typography.callout)
+                        .foregroundStyle(.secondary)
+                }
 
-                HStack(spacing: 4) {
-                    Image(systemName: hotkeyStatusIcon)
-                        .foregroundStyle(hotkeyStatusColor)
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(hotkeyStatusColor)
+                        .frame(width: 6, height: 6)
                     Text(hotkeyStatusText)
-                        .font(.caption)
+                        .font(Typography.caption)
                         .foregroundStyle(.secondary)
                 }
 
@@ -92,19 +109,46 @@ struct ContentView: View {
                     .font(.headline)
 
                 if transcriptions.isEmpty {
-                    VStack(spacing: 12) {
-                        Image(systemName: "text.bubble")
-                            .font(.system(size: 48))
-                            .foregroundStyle(.secondary)
-                        Text("No transcriptions yet")
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                        Text("Hold Fn to start recording")
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
+                    VStack(spacing: Spacing.lg) {
+                        ZStack {
+                            Circle()
+                                .fill(BrandColors.gradientSecondary)
+                                .frame(width: 100, height: 100)
+                                .opacity(0.3)
+                                .blur(radius: 30)
+
+                            Circle()
+                                .fill(BrandColors.gradientPrimary)
+                                .frame(width: 80, height: 80)
+                                .overlay(
+                                    Image(systemName: "waveform.badge.mic")
+                                        .font(.system(size: 32, weight: .medium))
+                                        .foregroundStyle(.white)
+                                )
+                        }
+
+                        VStack(spacing: Spacing.xs) {
+                            Text("No transcriptions yet")
+                                .font(Typography.title2)
+                                .foregroundStyle(.primary)
+
+                            Text("Start recording to see your transcriptions here")
+                                .font(Typography.callout)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+
+                        VStack(alignment: .leading, spacing: Spacing.sm) {
+                            FeatureHighlight(icon: "mic.fill", title: "Voice Recording", description: "Hold your hotkey to record")
+                            FeatureHighlight(icon: "waveform.badge.magnifyingglass", title: "AI Transcription", description: "Powered by Whisper AI")
+                            FeatureHighlight(icon: "doc.on.clipboard", title: "Auto Copy", description: "Text copied to clipboard")
+                        }
+                        .padding(Spacing.md)
+                        .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
+                        .cornerRadius(CornerRadius.md)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 40)
+                    .padding(.vertical, Spacing.xxl)
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 12) {
@@ -183,6 +227,32 @@ struct ContentView: View {
             return
         }
         NSWorkspace.shared.open(url)
+    }
+}
+
+struct FeatureHighlight: View {
+    let icon: String
+    let title: String
+    let description: String
+
+    var body: some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(BrandColors.primaryBlue)
+                .frame(width: 32, height: 32)
+                .background(BrandColors.primaryBlue.opacity(0.1))
+                .cornerRadius(CornerRadius.sm)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(Typography.callout)
+                    .fontWeight(.medium)
+                Text(description)
+                    .font(Typography.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 }
 

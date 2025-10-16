@@ -63,11 +63,11 @@ struct FloatingWidgetView: View {
     private var stateColor: Color {
         switch state {
         case .idle:
-            return .gray
+            return .secondary
         case .recording(_, let isLocked):
-            return isLocked ? .orange : .red
+            return isLocked ? BrandColors.warning : BrandColors.error
         case .transcribing:
-            return .blue
+            return BrandColors.primaryBlue
         }
     }
 
@@ -96,7 +96,7 @@ struct FloatingWidgetView: View {
     @ViewBuilder
     private var recordingIndicator: some View {
         Circle()
-            .fill(.red)
+            .fill(BrandColors.error)
             .frame(width: 8, height: 8)
             .opacity(0.8)
     }

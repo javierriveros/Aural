@@ -6,43 +6,90 @@ struct RecordingIndicatorView: View {
     let duration: TimeInterval
 
     @State private var pulseAnimation = false
+    @State private var breathAnimation = false
+    @State private var rotationAnimation = 0.0
 
     var body: some View {
-        HStack(spacing: 12) {
-            Circle()
-                .fill(isRecording ? Color.red : Color.gray)
-                .frame(width: 12, height: 12)
-                .scaleEffect(pulseAnimation ? 1.2 : 1.0)
-                .opacity(pulseAnimation ? 0.6 : 1.0)
-                .animation(
-                    isRecording ? .easeInOut(duration: 0.8).repeatForever(autoreverses: true) : .default,
-                    value: pulseAnimation
-                )
+        VStack(spacing: Spacing.md) {
+            ZStack {
+                Circle()
+                    .fill(BrandColors.gradientPrimary)
+                    .frame(width: 120, height: 120)
+                    .scaleEffect(breathAnimation ? 1.1 : 1.0)
+                    .opacity(breathAnimation ? 0.3 : 0.6)
+                    .blur(radius: 20)
+                    .animation(
+                        isRecording ? .easeInOut(duration: 2.0).repeatForever(autoreverses: true) : .default,
+                        value: breathAnimation
+                    )
 
-            Text(recordingStatusText)
-                .font(.headline)
+                Circle()
+                    .fill(isRecording ? BrandColors.gradientPrimary : BrandColors.gradientSecondary)
+                    .frame(width: 80, height: 80)
+                    .overlay(
+                        Circle()
+                            .stroke(lineWidth: 2)
+                            .fill(.white.opacity(0.3))
+                    )
+                    .shadow(color: BrandColors.primaryBlue.opacity(0.3), radius: 20, x: 0, y: 10)
 
-            if isLocked && isRecording {
-                Image(systemName: "lock.fill")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
+                Image(systemName: isRecording ? "waveform" : "mic.fill")
+                    .font(.system(size: 32, weight: .medium))
+                    .foregroundStyle(.white)
+                    .rotationEffect(.degrees(rotationAnimation))
+                    .scaleEffect(pulseAnimation ? 1.1 : 1.0)
+                    .animation(
+                        isRecording ? .easeInOut(duration: 0.6).repeatForever(autoreverses: true) : .default,
+                        value: pulseAnimation
+                    )
+
+                if isLocked && isRecording {
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Spacer()
+                            Image(systemName: "lock.fill")
+                                .font(.caption)
+                                .foregroundStyle(.white)
+                                .padding(6)
+                                .background(BrandColors.warning)
+                                .clipShape(Circle())
+                                .shadow(color: BrandColors.warning.opacity(0.5), radius: 8, x: 0, y: 4)
+                                .offset(x: 8, y: 8)
+                        }
+                    }
+                    .frame(width: 80, height: 80)
+                }
             }
+            .frame(height: 120)
 
-            if isRecording {
-                Text(formatDuration(duration))
-                    .font(.system(.body, design: .monospaced))
-                    .foregroundStyle(.secondary)
+            VStack(spacing: Spacing.xs) {
+                Text(recordingStatusText)
+                    .font(Typography.title2)
+                    .foregroundStyle(isRecording ? BrandColors.primaryBlue : .primary)
+
+                if isRecording {
+                    Text(formatDuration(duration))
+                        .font(Typography.monoBody)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Ready to transcribe")
+                        .font(Typography.callout)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 16)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(nsColor: .controlBackgroundColor))
-                .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 2)
-        )
+        .padding(.vertical, Spacing.lg)
         .onChange(of: isRecording) { _, newValue in
             pulseAnimation = newValue
+            breathAnimation = newValue
+            if newValue {
+                withAnimation(.linear(duration: 3.0).repeatForever(autoreverses: false)) {
+                    rotationAnimation = 360
+                }
+            } else {
+                rotationAnimation = 0
+            }
         }
     }
 

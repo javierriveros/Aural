@@ -6,53 +6,152 @@ struct TranscriptionRow: View {
     let onCopy: () -> Void
     let onDelete: () -> Void
 
+    @State private var isHovered = false
+    @State private var isExpanded = false
+    @State private var showCopiedFeedback = false
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(transcription.timestamp, style: .time)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack(spacing: Spacing.xs) {
+                HStack(spacing: 4) {
+                    Image(systemName: "clock.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(BrandColors.primaryBlue.opacity(0.6))
+                    Text(transcription.timestamp, style: .time)
+                        .font(Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
 
                 Spacer()
 
-                Text(formatDuration(transcription.duration))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                HStack(spacing: Spacing.xs) {
+                    Text(formatDuration(transcription.duration))
+                        .font(Typography.monoCaption)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, Spacing.xs)
+                        .padding(.vertical, 4)
+                        .background(BrandColors.primaryBlue.opacity(0.1))
+                        .cornerRadius(CornerRadius.sm)
+
+                    Text("\(wordCount(transcription.text)) words")
+                        .font(Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, Spacing.xs)
+                        .padding(.vertical, 4)
+                        .background(BrandColors.primaryCyan.opacity(0.1))
+                        .cornerRadius(CornerRadius.sm)
+                }
             }
 
             Text(transcription.text)
-                .font(.body)
+                .font(Typography.body)
                 .textSelection(.enabled)
-                .lineLimit(3)
+                .lineLimit(isExpanded ? nil : 3)
+                .animation(.easeInOut(duration: 0.2), value: isExpanded)
 
-            HStack {
+            if transcription.text.count > 150 {
                 Button {
-                    onCopy()
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        isExpanded.toggle()
+                    }
                 } label: {
-                    Label("Copy", systemImage: "doc.on.doc")
-                        .font(.caption)
-                }
-                .buttonStyle(.plain)
-
-                Button(role: .destructive) {
-                    onDelete()
-                } label: {
-                    Label("Delete", systemImage: "trash")
-                        .font(.caption)
+                    HStack(spacing: 4) {
+                        Text(isExpanded ? "Show less" : "Show more")
+                            .font(Typography.caption)
+                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                            .font(.system(size: 10, weight: .semibold))
+                    }
+                    .foregroundStyle(BrandColors.primaryBlue)
                 }
                 .buttonStyle(.plain)
             }
+
+            HStack(spacing: Spacing.sm) {
+                Button {
+                    onCopy()
+                    showCopiedFeedback = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        showCopiedFeedback = false
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: showCopiedFeedback ? "checkmark" : "doc.on.doc")
+                            .font(.system(size: 12, weight: .medium))
+                        Text(showCopiedFeedback ? "Copied!" : "Copy")
+                            .font(Typography.caption)
+                    }
+                    .foregroundStyle(showCopiedFeedback ? BrandColors.success : BrandColors.primaryBlue)
+                    .padding(.horizontal, Spacing.sm)
+                    .padding(.vertical, Spacing.xs)
+                    .background(
+                        (showCopiedFeedback ? BrandColors.success : BrandColors.primaryBlue)
+                            .opacity(0.1)
+                    )
+                    .cornerRadius(CornerRadius.sm)
+                }
+                .buttonStyle(.plain)
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showCopiedFeedback)
+
+                Spacer()
+
+                Button(role: .destructive) {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        onDelete()
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "trash")
+                            .font(.system(size: 12, weight: .medium))
+                        Text("Delete")
+                            .font(Typography.caption)
+                    }
+                    .foregroundStyle(BrandColors.error)
+                    .padding(.horizontal, Spacing.sm)
+                    .padding(.vertical, Spacing.xs)
+                    .background(BrandColors.error.opacity(0.1))
+                    .cornerRadius(CornerRadius.sm)
+                }
+                .buttonStyle(.plain)
+                .opacity(isHovered ? 1.0 : 0.6)
+            }
         }
-        .padding(16)
+        .padding(Spacing.md)
         .background(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: CornerRadius.md)
                 .fill(Color(nsColor: .controlBackgroundColor))
-                .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+                .overlay(
+                    RoundedRectangle(cornerRadius: CornerRadius.md)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: isHovered ? [BrandColors.primaryBlue.opacity(0.3), BrandColors.primaryCyan.opacity(0.3)] : [.clear],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
         )
+        .shadow(
+            color: isHovered ? BrandColors.primaryBlue.opacity(0.15) : .black.opacity(0.05),
+            radius: isHovered ? 12 : 4,
+            x: 0,
+            y: isHovered ? 6 : 2
+        )
+        .scaleEffect(isHovered ? 1.01 : 1.0)
+        .onHover { hovering in
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                isHovered = hovering
+            }
+        }
     }
 
     private func formatDuration(_ duration: TimeInterval) -> String {
         let seconds = Int(duration)
         return "\(seconds)s"
+    }
+
+    private func wordCount(_ text: String) -> Int {
+        let words = text.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }
+        return words.count
     }
 }
