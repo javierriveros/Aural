@@ -30,11 +30,43 @@ struct ContentView: View {
                 }
             }
 
-            Spacer()
+            if appState.isTranscribing {
+                ProgressView("Transcribing...")
+                    .padding()
+            }
 
-            Text("Transcription history will appear here")
-                .foregroundStyle(.secondary)
-                .font(.callout)
+            if let error = appState.lastError {
+                VStack(spacing: 8) {
+                    Text("Error")
+                        .font(.headline)
+                        .foregroundStyle(.red)
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding()
+                .background(Color.red.opacity(0.1))
+                .cornerRadius(8)
+            }
+
+            if let transcription = appState.lastTranscription {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Last Transcription:")
+                        .font(.headline)
+                    Text(transcription)
+                        .textSelection(.enabled)
+                        .font(.body)
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(nsColor: .controlBackgroundColor))
+                        .cornerRadius(8)
+                    Text("Copied to clipboard")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Spacer()
         }
         .padding()
         .frame(minWidth: 400, minHeight: 300)

@@ -1,11 +1,16 @@
 import Foundation
+import AppKit
 
 @Observable
 final class AppState {
     let audioRecorder = AudioRecorder()
     let hotkeyMonitor = HotkeyMonitor()
+    let whisperService = WhisperService()
 
     private(set) var isRecording = false
+    private(set) var isTranscribing = false
+    private(set) var lastTranscription: String?
+    private(set) var lastError: String?
     private var recordingURL: URL?
 
     init() {
@@ -48,7 +53,26 @@ final class AppState {
     }
 
     private func handleRecordingComplete(url: URL) async {
-        print("Recording saved to: \(url.path)")
+        isTranscribing = true
+        lastError = nil
+
+        do {
+            let transcription = try await whisperService.transcribe(audioURL: url)
+            lastTranscription = transcription
+            copyToClipboard(transcription)
+
+            try? FileManager.default.removeItem(at: url)
+        } catch {
+            lastError = error.localizedDescription
+        }
+
+        isTranscribing = false
+    }
+
+    private func copyToClipboard(_ text: String) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
     }
 
     deinit {
