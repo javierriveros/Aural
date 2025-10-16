@@ -27,9 +27,13 @@ struct RecordingIndicatorView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .padding()
-        .background(Color(nsColor: .controlBackgroundColor))
-        .cornerRadius(8)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(nsColor: .controlBackgroundColor))
+                .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 2)
+        )
         .onChange(of: isRecording) { _, newValue in
             pulseAnimation = newValue
         }

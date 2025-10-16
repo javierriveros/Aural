@@ -43,9 +43,12 @@ struct TranscriptionRow: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding()
-        .background(Color(nsColor: .controlBackgroundColor))
-        .cornerRadius(8)
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(nsColor: .controlBackgroundColor))
+                .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+        )
     }
 
     private func formatDuration(_ duration: TimeInterval) -> String {

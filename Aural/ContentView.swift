@@ -125,8 +125,8 @@ struct ContentView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .padding()
-        .frame(minWidth: 400, minHeight: 300)
+        .padding(24)
+        .background(Color(nsColor: .windowBackgroundColor))
         .toolbar {
             ToolbarItem {
                 Button {
