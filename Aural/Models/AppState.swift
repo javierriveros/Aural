@@ -28,37 +28,39 @@ final class AppState {
     }
 
     var showFloatingWidget: Bool {
-        get { UserDefaults.standard.bool(forKey: "show_floating_widget") }
+        get { UserDefaults.standard.bool(forKey: UserDefaultsKeys.showFloatingWidget) }
         set {
-            UserDefaults.standard.set(newValue, forKey: "show_floating_widget")
+            UserDefaults.standard.set(newValue, forKey: UserDefaultsKeys.showFloatingWidget)
             updateFloatingWidgetVisibility()
         }
     }
 
     var audioSpeedMultiplier: Float {
         get {
-            let value = UserDefaults.standard.float(forKey: "audio_speed_multiplier")
+            let value = UserDefaults.standard.float(forKey: UserDefaultsKeys.audioSpeedMultiplier)
             return value > 0 ? value : 1.0
         }
         set {
-            UserDefaults.standard.set(newValue, forKey: "audio_speed_multiplier")
+            UserDefaults.standard.set(newValue, forKey: UserDefaultsKeys.audioSpeedMultiplier)
         }
     }
 
     var textInjectionEnabled: Bool {
-        get { UserDefaults.standard.bool(forKey: "text_injection_enabled") }
-        set { UserDefaults.standard.set(newValue, forKey: "text_injection_enabled") }
+        get { UserDefaults.standard.bool(forKey: UserDefaultsKeys.textInjectionEnabled) }
+        set { UserDefaults.standard.set(newValue, forKey: UserDefaultsKeys.textInjectionEnabled) }
     }
 
     init() {
         UserDefaults.standard.register(defaults: [
-            "show_floating_widget": true,
-            "audio_speed_multiplier": 1.0,
-            "text_injection_enabled": false
+            UserDefaultsKeys.showFloatingWidget: true,
+            UserDefaultsKeys.audioSpeedMultiplier: 1.0,
+            UserDefaultsKeys.textInjectionEnabled: false
         ])
         setupHotkeyCallbacks()
         setupFloatingWidgetCallbacks()
-        _ = hotkeyMonitor.startMonitoring()
+        if !hotkeyMonitor.startMonitoring() {
+            print("Warning: Failed to start hotkey monitoring")
+        }
         updateFloatingWidgetVisibility()
     }
 
@@ -218,21 +220,21 @@ final class AppState {
                 do {
                     try textInjectionService.injectText(transcriptionText)
                 } catch {
-                    copyToClipboard(transcriptionText)
+                    ClipboardService.copy(transcriptionText)
                 }
             } else {
-                copyToClipboard(transcriptionText)
+                ClipboardService.copy(transcriptionText)
             }
 
             saveTranscription(text: transcriptionText, duration: duration)
 
-            try? FileManager.default.removeItem(at: processedURL)
+            FileManager.default.safelyRemoveItem(at: processedURL)
 
             soundPlayer.playTranscriptionComplete()
         } catch {
             lastError = error.localizedDescription
             soundPlayer.playError()
-            try? FileManager.default.removeItem(at: url)
+            FileManager.default.safelyRemoveItem(at: url)
         }
 
         isTranscribing = false
@@ -252,11 +254,6 @@ final class AppState {
         }
     }
 
-    private func copyToClipboard(_ text: String) {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(text, forType: .string)
-    }
 
     private func updateFloatingWidgetVisibility() {
         if showFloatingWidget {

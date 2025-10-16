@@ -170,9 +170,7 @@ struct ContentView: View {
     }
 
     private func copyToClipboard(_ text: String) {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(text, forType: .string)
+        ClipboardService.copy(text)
     }
 
     private func deleteTranscription(_ transcription: Transcription) {
@@ -180,7 +178,10 @@ struct ContentView: View {
     }
 
     private func openAccessibilitySettings() {
-        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") else {
+            print("Failed to create system preferences URL")
+            return
+        }
         NSWorkspace.shared.open(url)
     }
 }
