@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppState.self) private var appState
     @State private var apiKey: String = ""
     @State private var isTestingAPI = false
     @State private var testResult: String?
@@ -168,19 +169,21 @@ struct SettingsView: View {
         apiKey = UserDefaults.standard.string(forKey: "openai_api_key") ?? ""
         recordingMode = RecordingModePreferences.mode
         soundsEnabled = UserDefaults.standard.bool(forKey: "sounds_enabled")
-        showFloatingWidget = UserDefaults.standard.bool(forKey: "show_floating_widget")
-        let speed = UserDefaults.standard.float(forKey: "audio_speed_multiplier")
-        audioSpeedMultiplier = speed > 0 ? speed : 1.0
-        textInjectionEnabled = UserDefaults.standard.bool(forKey: "text_injection_enabled")
+        showFloatingWidget = appState.showFloatingWidget
+        audioSpeedMultiplier = appState.audioSpeedMultiplier
+        textInjectionEnabled = appState.textInjectionEnabled
     }
 
     private func saveSettings() {
         UserDefaults.standard.set(apiKey, forKey: "openai_api_key")
         RecordingModePreferences.mode = recordingMode
         UserDefaults.standard.set(soundsEnabled, forKey: "sounds_enabled")
-        UserDefaults.standard.set(showFloatingWidget, forKey: "show_floating_widget")
         UserDefaults.standard.set(audioSpeedMultiplier, forKey: "audio_speed_multiplier")
         UserDefaults.standard.set(textInjectionEnabled, forKey: "text_injection_enabled")
+
+        appState.showFloatingWidget = showFloatingWidget
+        appState.audioSpeedMultiplier = audioSpeedMultiplier
+        appState.textInjectionEnabled = textInjectionEnabled
     }
 
     private func testAPIKey() {
