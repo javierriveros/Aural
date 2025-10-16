@@ -7,10 +7,12 @@
 
 import SwiftUI
 import SwiftData
+import AppKit
 
 struct ContentView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.modelContext) private var modelContext
+    @Query(sort: \Transcription.timestamp, order: .reverse) private var transcriptions: [Transcription]
     @State private var showSettings = false
 
     var body: some View {
@@ -52,24 +54,46 @@ struct ContentView: View {
                 .cornerRadius(8)
             }
 
-            if let transcription = appState.lastTranscription {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Last Transcription:")
-                        .font(.headline)
-                    Text(transcription)
-                        .textSelection(.enabled)
-                        .font(.body)
-                        .padding()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color(nsColor: .controlBackgroundColor))
-                        .cornerRadius(8)
-                    Text("Copied to clipboard")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+            Divider()
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Transcription History")
+                    .font(.headline)
+
+                if transcriptions.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "text.bubble")
+                            .font(.system(size: 48))
+                            .foregroundStyle(.secondary)
+                        Text("No transcriptions yet")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                        Text("Hold Fn to start recording")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 40)
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            ForEach(transcriptions) { transcription in
+                                TranscriptionRow(
+                                    transcription: transcription,
+                                    onCopy: {
+                                        copyToClipboard(transcription.text)
+                                    },
+                                    onDelete: {
+                                        deleteTranscription(transcription)
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    .frame(maxHeight: .infinity)
                 }
             }
-
-            Spacer()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .padding()
         .frame(minWidth: 400, minHeight: 300)
@@ -112,6 +136,16 @@ struct ContentView: View {
         case .inactive: return "Hotkey monitoring inactive"
         case .permissionDenied: return "Accessibility permission required"
         }
+    }
+
+    private func copyToClipboard(_ text: String) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+    }
+
+    private func deleteTranscription(_ transcription: Transcription) {
+        modelContext.delete(transcription)
     }
 }
 
