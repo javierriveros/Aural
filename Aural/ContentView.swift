@@ -14,6 +14,7 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transcription.timestamp, order: .reverse) private var transcriptions: [Transcription]
     @State private var showSettings = false
+    @State private var permissionCheckTimer: Timer?
 
     var body: some View {
         VStack(spacing: 20) {
@@ -107,6 +108,7 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Transcription History")
                     .font(.headline)
+                    .padding(.horizontal, 2)
 
                 if transcriptions.isEmpty {
                     VStack(spacing: Spacing.lg) {
@@ -188,6 +190,10 @@ struct ContentView: View {
         }
         .onAppear {
             appState.modelContext = modelContext
+            startPermissionCheck()
+        }
+        .onDisappear {
+            stopPermissionCheck()
         }
     }
 
@@ -229,6 +235,19 @@ struct ContentView: View {
             return
         }
         NSWorkspace.shared.open(url)
+    }
+
+    private func startPermissionCheck() {
+        permissionCheckTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            if appState.hotkeyMonitor.state == .permissionDenied {
+                _ = appState.hotkeyMonitor.startMonitoring()
+            }
+        }
+    }
+
+    private func stopPermissionCheck() {
+        permissionCheckTimer?.invalidate()
+        permissionCheckTimer = nil
     }
 }
 

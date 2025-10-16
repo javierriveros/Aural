@@ -32,7 +32,7 @@ struct SettingsView: View {
                 }
 
                 Text("Settings")
-                    .font(Typography.title)
+                    .font(Typography.title2)
 
                 Spacer()
             }
