@@ -10,20 +10,39 @@ struct FloatingWidgetView: View {
     let state: WidgetState
     let onTap: () -> Void
 
-    var body: some View {
-        HStack(spacing: 12) {
-            stateIcon
-                .font(.title2)
-                .foregroundStyle(stateColor)
+    @State private var pulseAnimation = false
 
-            VStack(alignment: .leading, spacing: 2) {
+    var body: some View {
+        HStack(spacing: Spacing.sm) {
+            ZStack {
+                Circle()
+                    .fill(stateColor.opacity(0.15))
+                    .frame(width: 44, height: 44)
+                    .scaleEffect(pulseAnimation ? 1.2 : 1.0)
+                    .opacity(pulseAnimation ? 0 : 1.0)
+                    .animation(
+                        isRecording ? .easeOut(duration: 1.5).repeatForever(autoreverses: false) : .default,
+                        value: pulseAnimation
+                    )
+
+                Circle()
+                    .fill(stateColor.opacity(0.2))
+                    .frame(width: 44, height: 44)
+
+                stateIcon
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(stateColor)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
                 Text(stateTitle)
-                    .font(.headline)
+                    .font(Typography.callout)
+                    .fontWeight(.semibold)
                     .foregroundStyle(.primary)
 
                 if let subtitle = stateSubtitle {
                     Text(subtitle)
-                        .font(.caption)
+                        .font(Typography.caption)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -33,14 +52,45 @@ struct FloatingWidgetView: View {
                 recordingIndicator
             }
         }
-        .padding(12)
-        .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 2)
-        .contentShape(RoundedRectangle(cornerRadius: 12))
+        .padding(.horizontal, Spacing.md)
+        .padding(.vertical, Spacing.sm)
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: CornerRadius.md)
+                    .fill(.ultraThinMaterial)
+
+                RoundedRectangle(cornerRadius: CornerRadius.md)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: isRecording ? [BrandColors.primaryBlue.opacity(0.3), BrandColors.primaryCyan.opacity(0.3)] : [.clear],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            }
+        )
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
+        .shadow(
+            color: isRecording ? BrandColors.primaryBlue.opacity(0.2) : .black.opacity(0.15),
+            radius: isRecording ? 16 : 8,
+            x: 0,
+            y: 4
+        )
+        .contentShape(RoundedRectangle(cornerRadius: CornerRadius.md))
         .onTapGesture {
             onTap()
         }
+        .onChange(of: isRecording) { _, newValue in
+            pulseAnimation = newValue
+        }
+    }
+
+    private var isRecording: Bool {
+        if case .recording = state {
+            return true
+        }
+        return false
     }
 
     @ViewBuilder

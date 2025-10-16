@@ -19,10 +19,27 @@ struct SettingsView: View {
     @State private var keyboardShortcuts = KeyboardShortcutsConfiguration.default
 
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Settings")
-                .font(.title)
-                .frame(maxWidth: .infinity, alignment: .leading)
+        VStack(spacing: 0) {
+            HStack(spacing: Spacing.md) {
+                ZStack {
+                    Circle()
+                        .fill(BrandColors.gradientPrimary)
+                        .frame(width: 40, height: 40)
+
+                    Image(systemName: "gearshape.fill")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(.white)
+                }
+
+                Text("Settings")
+                    .font(Typography.title)
+
+                Spacer()
+            }
+            .padding(Spacing.lg)
+            .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
+
+            Divider()
 
             Form {
                 Section {
@@ -43,8 +60,8 @@ struct SettingsView: View {
 
                     if let result = testResult {
                         Text(result)
-                            .font(.caption)
-                            .foregroundStyle(showSuccess ? .green : .red)
+                            .font(Typography.caption)
+                            .foregroundStyle(showSuccess ? BrandColors.success : BrandColors.error)
                     }
                 } header: {
                     Text("OpenAI Configuration")
@@ -142,7 +159,7 @@ struct SettingsView: View {
                         Button("Manage Vocabulary") {
                             showVocabularyManager = true
                         }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(PrimaryButtonStyle())
                         .controlSize(.small)
                     }
                 } header: {
@@ -239,24 +256,27 @@ struct SettingsView: View {
             }
             .formStyle(.grouped)
 
-            HStack {
+            HStack(spacing: Spacing.md) {
                 Button("Cancel") {
                     dismiss()
                 }
+                .buttonStyle(SecondaryButtonStyle())
                 .keyboardShortcut(.cancelAction)
 
                 Spacer()
 
-                Button("Save") {
+                Button("Save Settings") {
                     saveSettings()
                     dismiss()
                 }
+                .buttonStyle(PrimaryButtonStyle())
                 .keyboardShortcut(.defaultAction)
                 .disabled(apiKey.isEmpty)
             }
+            .padding(Spacing.lg)
+            .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
         }
-        .padding()
-        .frame(width: 500, height: 850)
+        .frame(width: 600, height: 850)
         .onAppear {
             loadSettings()
         }
