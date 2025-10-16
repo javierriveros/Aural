@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(AppState.self) private var appState
+    @State private var showSettings = false
 
     var body: some View {
         VStack(spacing: 20) {
@@ -70,6 +71,18 @@ struct ContentView: View {
         }
         .padding()
         .frame(minWidth: 400, minHeight: 300)
+        .toolbar {
+            ToolbarItem {
+                Button {
+                    showSettings = true
+                } label: {
+                    Label("Settings", systemImage: "gear")
+                }
+            }
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
+        }
     }
 
     private var hotkeyStatusIcon: String {
