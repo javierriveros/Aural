@@ -13,6 +13,8 @@ struct SettingsView: View {
     @State private var audioSpeedMultiplier: Float = 1.0
     @State private var textInjectionEnabled = false
     @State private var hotkeyConfig = HotkeyConfiguration.default
+    @State private var customVocabulary = CustomVocabulary()
+    @State private var showVocabularyManager = false
 
     var body: some View {
         VStack(spacing: 20) {
@@ -121,6 +123,32 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Toggle("Enable Custom Vocabulary", isOn: $customVocabulary.isEnabled)
+                        .toggleStyle(.switch)
+
+                    Text("Replace specific words and phrases in transcriptions with custom alternatives.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    HStack {
+                        Text("\(customVocabulary.entries.count) entries")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        Spacer()
+
+                        Button("Manage Vocabulary") {
+                            showVocabularyManager = true
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                    }
+                } header: {
+                    Text("Custom Vocabulary")
+                        .font(.headline)
+                }
+
+                Section {
                     HStack {
                         Text("Version:")
                         Spacer()
@@ -155,6 +183,21 @@ struct SettingsView: View {
         .onAppear {
             loadSettings()
         }
+        .sheet(isPresented: $showVocabularyManager) {
+            VStack {
+                VocabularyManagementView(vocabulary: $customVocabulary)
+                    .frame(minWidth: 700, minHeight: 500)
+
+                HStack {
+                    Spacer()
+                    Button("Done") {
+                        showVocabularyManager = false
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .padding()
+            }
+        }
     }
 
     private func loadSettings() {
@@ -165,6 +208,7 @@ struct SettingsView: View {
         audioSpeedMultiplier = appState.audioSpeedMultiplier
         textInjectionEnabled = appState.textInjectionEnabled
         hotkeyConfig = HotkeyRepository().load()
+        customVocabulary = VocabularyRepository().load()
     }
 
     private func saveSettings() {
@@ -178,6 +222,9 @@ struct SettingsView: View {
         appState.audioSpeedMultiplier = audioSpeedMultiplier
         appState.textInjectionEnabled = textInjectionEnabled
         appState.hotkeyMonitor.updateHotkey(hotkeyConfig)
+
+        VocabularyRepository().save(customVocabulary)
+        appState.vocabularyService.reload()
     }
 
     private func testAPIKey() {

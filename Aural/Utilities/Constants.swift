@@ -13,6 +13,8 @@ enum UserDefaultsKeys {
     static let recordingMode = "recording_mode"
     static let quickTapThreshold = "quick_tap_threshold"
     static let customHotkey = "custom_hotkey"
+    static let customVocabulary = "custom_vocabulary"
+    static let voiceCommandsEnabled = "voice_commands_enabled"
 }
 
 // MARK: - Audio Settings

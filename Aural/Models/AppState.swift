@@ -11,6 +11,7 @@ final class AppState {
     let floatingWidget = FloatingWidgetController()
     let audioProcessor = AudioProcessor()
     let textInjectionService = TextInjectionService()
+    let vocabularyService = VocabularyService()
 
     var modelContext: ModelContext?
 
@@ -213,7 +214,8 @@ final class AppState {
                 processedURL = url
             }
 
-            let transcriptionText = try await whisperService.transcribe(audioURL: processedURL)
+            let rawTranscription = try await whisperService.transcribe(audioURL: processedURL)
+            let transcriptionText = vocabularyService.applyWordBoundaryReplacements(to: rawTranscription)
             lastTranscription = transcriptionText
 
             if textInjectionEnabled {
