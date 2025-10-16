@@ -36,48 +36,67 @@ final class AudioProcessor {
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension("m4a")
 
-        do {
-            let audioFile = try AVAudioFile(forReading: url)
-            let format = audioFile.processingFormat
+        return try await withCheckedThrowingContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                do {
+                    let asset = AVURLAsset(url: url)
 
-            let engine = AVAudioEngine()
-            let playerNode = AVAudioPlayerNode()
-            let timePitch = AVAudioUnitTimePitch()
+                    guard let assetTrack = asset.tracks(withMediaType: .audio).first else {
+                        continuation.resume(throwing: ProcessingError.invalidAudioFile)
+                        return
+                    }
 
-            engine.attach(playerNode)
-            engine.attach(timePitch)
+                    let composition = AVMutableComposition()
+                    guard let compositionTrack = composition.addMutableTrack(
+                        withMediaType: .audio,
+                        preferredTrackID: kCMPersistentTrackID_Invalid
+                    ) else {
+                        continuation.resume(throwing: ProcessingError.processingFailed(NSError(domain: "AudioProcessor", code: -1)))
+                        return
+                    }
 
-            engine.connect(playerNode, to: timePitch, format: format)
-            engine.connect(timePitch, to: engine.mainMixerNode, format: format)
+                    try compositionTrack.insertTimeRange(
+                        CMTimeRange(start: .zero, duration: asset.duration),
+                        of: assetTrack,
+                        at: .zero
+                    )
 
-            timePitch.rate = speedMultiplier
+                    compositionTrack.scaleTimeRange(
+                        CMTimeRange(start: .zero, duration: asset.duration),
+                        toDuration: CMTimeMultiplyByFloat64(asset.duration, multiplier: Float64(1.0 / speedMultiplier))
+                    )
 
-            let outputFile = try AVAudioFile(
-                forWriting: outputURL,
-                settings: audioFile.fileFormat.settings
-            )
+                    guard let exportSession = AVAssetExportSession(
+                        asset: composition,
+                        presetName: AVAssetExportPresetAppleM4A
+                    ) else {
+                        continuation.resume(throwing: ProcessingError.processingFailed(NSError(domain: "AudioProcessor", code: -2)))
+                        return
+                    }
 
-            engine.mainMixerNode.installTap(
-                onBus: 0,
-                bufferSize: 4096,
-                format: format
-            ) { buffer, _ in
-                try? outputFile.write(from: buffer)
+                    exportSession.outputURL = outputURL
+                    exportSession.outputFileType = .m4a
+
+                    exportSession.exportAsynchronously {
+                        switch exportSession.status {
+                        case .completed:
+                            continuation.resume(returning: outputURL)
+                        case .failed:
+                            if let error = exportSession.error {
+                                continuation.resume(throwing: ProcessingError.processingFailed(error))
+                            } else {
+                                continuation.resume(throwing: ProcessingError.processingFailed(NSError(domain: "AudioProcessor", code: -3)))
+                            }
+                        case .cancelled:
+                            continuation.resume(throwing: ProcessingError.processingFailed(NSError(domain: "AudioProcessor", code: -4)))
+                        default:
+                            continuation.resume(throwing: ProcessingError.processingFailed(NSError(domain: "AudioProcessor", code: -5)))
+                        }
+                    }
+                } catch {
+                    continuation.resume(throwing: ProcessingError.processingFailed(error))
+                }
             }
-
-            try engine.start()
-            await playerNode.scheduleFile(audioFile, at: nil)
-            playerNode.play()
-
-            let duration = Double(audioFile.length) / format.sampleRate / Double(speedMultiplier)
-            try await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
-
-            engine.mainMixerNode.removeTap(onBus: 0)
-            engine.stop()
-
-            return outputURL
-        } catch {
-            throw ProcessingError.processingFailed(error)
         }
     }
 
