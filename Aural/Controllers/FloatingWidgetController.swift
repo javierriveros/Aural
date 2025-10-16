@@ -4,6 +4,7 @@ import SwiftUI
 final class FloatingWidgetController {
     private var panel: NSPanel?
     private var hostingView: NSHostingView<FloatingWidgetView>?
+    var onTap: (() -> Void)?
 
     var isVisible: Bool {
         panel?.isVisible ?? false
@@ -14,7 +15,9 @@ final class FloatingWidgetController {
     }
 
     private func setupPanel() {
-        let contentView = FloatingWidgetView(state: .idle)
+        let contentView = FloatingWidgetView(state: .idle) { [weak self] in
+            self?.onTap?()
+        }
         let hostingView = NSHostingView(rootView: contentView)
 
         let panel = NSPanel(
@@ -29,7 +32,7 @@ final class FloatingWidgetController {
         panel.isFloatingPanel = true
         panel.isMovableByWindowBackground = true
         panel.backgroundColor = .clear
-        panel.hasShadow = true
+        panel.hasShadow = false
         panel.titleVisibility = .hidden
         panel.titlebarAppearsTransparent = true
         panel.isOpaque = false
@@ -55,7 +58,9 @@ final class FloatingWidgetController {
 
     func updateState(_ state: WidgetState) {
         guard let hostingView = hostingView else { return }
-        hostingView.rootView = FloatingWidgetView(state: state)
+        hostingView.rootView = FloatingWidgetView(state: state) { [weak self] in
+            self?.onTap?()
+        }
     }
 
     private func positionPanel() {

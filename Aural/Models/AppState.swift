@@ -57,8 +57,25 @@ final class AppState {
             "text_injection_enabled": false
         ])
         setupHotkeyCallbacks()
+        setupFloatingWidgetCallbacks()
         _ = hotkeyMonitor.startMonitoring()
         updateFloatingWidgetVisibility()
+    }
+
+    private func setupFloatingWidgetCallbacks() {
+        floatingWidget.onTap = { [weak self] in
+            self?.handleWidgetTap()
+        }
+    }
+
+    private func handleWidgetTap() {
+        if isRecording {
+            if isRecordingLocked {
+                stopRecording()
+            }
+        } else if !isTranscribing {
+            startLockedRecording()
+        }
     }
 
     private func setupHotkeyCallbacks() {

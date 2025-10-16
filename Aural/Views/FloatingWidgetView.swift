@@ -8,6 +8,7 @@ enum WidgetState {
 
 struct FloatingWidgetView: View {
     let state: WidgetState
+    let onTap: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
@@ -34,8 +35,12 @@ struct FloatingWidgetView: View {
         }
         .padding(12)
         .background(.ultraThinMaterial)
-        .cornerRadius(12)
-        .shadow(radius: 8)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 2)
+        .contentShape(RoundedRectangle(cornerRadius: 12))
+        .onTapGesture {
+            onTap()
+        }
     }
 
     @ViewBuilder
@@ -105,10 +110,10 @@ struct FloatingWidgetView: View {
 
 #Preview {
     VStack(spacing: 20) {
-        FloatingWidgetView(state: .idle)
-        FloatingWidgetView(state: .recording(duration: 5.3, isLocked: false))
-        FloatingWidgetView(state: .recording(duration: 65.5, isLocked: true))
-        FloatingWidgetView(state: .transcribing)
+        FloatingWidgetView(state: .idle, onTap: {})
+        FloatingWidgetView(state: .recording(duration: 5.3, isLocked: false), onTap: {})
+        FloatingWidgetView(state: .recording(duration: 65.5, isLocked: true), onTap: {})
+        FloatingWidgetView(state: .transcribing, onTap: {})
     }
     .padding()
     .frame(width: 300)

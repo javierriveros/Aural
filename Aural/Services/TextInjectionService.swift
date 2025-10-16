@@ -83,6 +83,8 @@ final class TextInjectionService {
                 keyUpEvent.keyboardSetUnicodeString(stringLength: 1, unicodeString: [keyCode])
                 keyUpEvent.post(tap: .cghidEventTap)
             }
+            
+            
 
             usleep(1000)
         }
