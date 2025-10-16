@@ -33,6 +33,36 @@ struct ContentView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+
+                if appState.hotkeyMonitor.state == .permissionDenied {
+                    VStack(spacing: 8) {
+                        Text("Accessibility permission required for global hotkey")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                            .multilineTextAlignment(.center)
+
+                        HStack(spacing: 8) {
+                            Button("Request Permission") {
+                                appState.hotkeyMonitor.requestPermission()
+                            }
+                            .controlSize(.small)
+
+                            Button("Open Settings") {
+                                openAccessibilitySettings()
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.small)
+
+                            Button("Retry") {
+                                _ = appState.hotkeyMonitor.startMonitoring()
+                            }
+                            .controlSize(.small)
+                        }
+                    }
+                    .padding()
+                    .background(Color.orange.opacity(0.1))
+                    .cornerRadius(8)
+                }
             }
 
             if appState.isTranscribing {
@@ -146,6 +176,11 @@ struct ContentView: View {
 
     private func deleteTranscription(_ transcription: Transcription) {
         modelContext.delete(transcription)
+    }
+
+    private func openAccessibilitySettings() {
+        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
+        NSWorkspace.shared.open(url)
     }
 }
 

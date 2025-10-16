@@ -20,6 +20,11 @@ final class HotkeyMonitor {
 
     init() {}
 
+    func requestPermission() {
+        let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
+        _ = AXIsProcessTrustedWithOptions(options)
+    }
+
     func startMonitoring() -> Bool {
         guard checkAccessibilityPermission() else {
             state = .permissionDenied
