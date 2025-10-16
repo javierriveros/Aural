@@ -12,6 +12,7 @@ final class AppState {
     let audioProcessor = AudioProcessor()
     let textInjectionService = TextInjectionService()
     let vocabularyService = VocabularyService()
+    let voiceCommandProcessor = VoiceCommandProcessor()
 
     var modelContext: ModelContext?
 
@@ -215,7 +216,8 @@ final class AppState {
             }
 
             let rawTranscription = try await whisperService.transcribe(audioURL: processedURL)
-            let transcriptionText = vocabularyService.applyWordBoundaryReplacements(to: rawTranscription)
+            let withVocabulary = vocabularyService.applyWordBoundaryReplacements(to: rawTranscription)
+            let transcriptionText = voiceCommandProcessor.process(withVocabulary)
             lastTranscription = transcriptionText
 
             if textInjectionEnabled {

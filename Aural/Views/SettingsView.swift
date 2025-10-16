@@ -15,6 +15,7 @@ struct SettingsView: View {
     @State private var hotkeyConfig = HotkeyConfiguration.default
     @State private var customVocabulary = CustomVocabulary()
     @State private var showVocabularyManager = false
+    @State private var voiceCommandsEnabled = false
 
     var body: some View {
         VStack(spacing: 20) {
@@ -149,6 +150,40 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Toggle("Enable Voice Commands", isOn: $voiceCommandsEnabled)
+                        .toggleStyle(.switch)
+
+                    Text("Process voice commands for punctuation, formatting, and editing. Say 'comma', 'period', 'new line', 'capitalize', etc.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    if voiceCommandsEnabled {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Example commands:")
+                                .font(.caption)
+                                .fontWeight(.medium)
+
+                            Text("• Punctuation: comma, period, question mark")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text("• Formatting: new line, new paragraph")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text("• Capitalization: capitalize, all caps, lowercase")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text("• Editing: scratch that, delete sentence")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.top, 4)
+                    }
+                } header: {
+                    Text("Voice Commands")
+                        .font(.headline)
+                }
+
+                Section {
                     HStack {
                         Text("Version:")
                         Spacer()
@@ -179,7 +214,7 @@ struct SettingsView: View {
             }
         }
         .padding()
-        .frame(width: 500, height: 650)
+        .frame(width: 500, height: 750)
         .onAppear {
             loadSettings()
         }
@@ -209,6 +244,7 @@ struct SettingsView: View {
         textInjectionEnabled = appState.textInjectionEnabled
         hotkeyConfig = HotkeyRepository().load()
         customVocabulary = VocabularyRepository().load()
+        voiceCommandsEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.voiceCommandsEnabled)
     }
 
     private func saveSettings() {
@@ -217,6 +253,7 @@ struct SettingsView: View {
         UserDefaults.standard.set(soundsEnabled, forKey: UserDefaultsKeys.soundsEnabled)
         UserDefaults.standard.set(audioSpeedMultiplier, forKey: UserDefaultsKeys.audioSpeedMultiplier)
         UserDefaults.standard.set(textInjectionEnabled, forKey: UserDefaultsKeys.textInjectionEnabled)
+        UserDefaults.standard.set(voiceCommandsEnabled, forKey: UserDefaultsKeys.voiceCommandsEnabled)
 
         appState.showFloatingWidget = showFloatingWidget
         appState.audioSpeedMultiplier = audioSpeedMultiplier
