@@ -20,26 +20,23 @@ enum RecordingMode: String, CaseIterable, Identifiable {
 }
 
 struct RecordingModePreferences {
-    static let key = "recording_mode"
-    static let quickTapThresholdKey = "quick_tap_threshold"
-
     static var mode: RecordingMode {
         get {
-            let stored = UserDefaults.standard.string(forKey: key) ?? RecordingMode.hybrid.rawValue
+            let stored = UserDefaults.standard.string(forKey: UserDefaultsKeys.recordingMode) ?? RecordingMode.hybrid.rawValue
             return RecordingMode(rawValue: stored) ?? .hybrid
         }
         set {
-            UserDefaults.standard.set(newValue.rawValue, forKey: key)
+            UserDefaults.standard.set(newValue.rawValue, forKey: UserDefaultsKeys.recordingMode)
         }
     }
 
     static var quickTapThreshold: TimeInterval {
         get {
-            let stored = UserDefaults.standard.double(forKey: quickTapThresholdKey)
-            return stored > 0 ? stored : 0.3
+            let stored = UserDefaults.standard.double(forKey: UserDefaultsKeys.quickTapThreshold)
+            return stored > 0 ? stored : KeyboardConstants.quickTapThresholdSeconds
         }
         set {
-            UserDefaults.standard.set(newValue, forKey: quickTapThresholdKey)
+            UserDefaults.standard.set(newValue, forKey: UserDefaultsKeys.quickTapThreshold)
         }
     }
 }

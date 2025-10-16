@@ -5,11 +5,11 @@ final class SoundPlayer {
     static let shared = SoundPlayer()
 
     private var soundsEnabled: Bool {
-        UserDefaults.standard.bool(forKey: "sounds_enabled")
+        UserDefaults.standard.bool(forKey: UserDefaultsKeys.soundsEnabled)
     }
 
     private init() {
-        UserDefaults.standard.register(defaults: ["sounds_enabled": true])
+        UserDefaults.standard.register(defaults: [UserDefaultsKeys.soundsEnabled: true])
     }
 
     func playRecordingStart() {

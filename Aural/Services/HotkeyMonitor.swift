@@ -17,11 +17,25 @@ final class HotkeyMonitor {
     var onKeyUp: (() -> Void)?
     var onQuickTap: (() -> Void)?
 
-    private let targetKeyCode: CGKeyCode = 0x3F
+    private(set) var hotkeyConfig: HotkeyConfiguration
+    private let repository = HotkeyRepository()
     private var keyPressStartTime: Date?
-    private var isFnKeyCurrentlyPressed = false
+    private var isHotkeyCurrentlyPressed = false
 
-    init() {}
+    init() {
+        self.hotkeyConfig = repository.load()
+    }
+
+    func updateHotkey(_ configuration: HotkeyConfiguration) {
+        self.hotkeyConfig = configuration
+        repository.save(configuration)
+
+        // Restart monitoring with new hotkey
+        if state == .active {
+            stopMonitoring()
+            _ = startMonitoring()
+        }
+    }
 
     func requestPermission() {
         let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
@@ -81,35 +95,55 @@ final class HotkeyMonitor {
     }
 
     private func handleEvent(proxy: CGEventTapProxy, type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent> {
-        if type == .flagsChanged {
+        // Handle modifier-only hotkeys (like Fn key)
+        if type == .flagsChanged && hotkeyConfig.modifiers.contains(.maskSecondaryFn) {
             let flags = event.flags
             let fnKeyPressed = flags.contains(.maskSecondaryFn)
 
-            if fnKeyPressed && !isFnKeyCurrentlyPressed {
+            if fnKeyPressed && !isHotkeyCurrentlyPressed {
                 keyPressStartTime = Date()
-                isFnKeyCurrentlyPressed = true
+                isHotkeyCurrentlyPressed = true
                 onKeyDown?()
-            } else if !fnKeyPressed && isFnKeyCurrentlyPressed {
-                isFnKeyCurrentlyPressed = false
+            } else if !fnKeyPressed && isHotkeyCurrentlyPressed {
+                isHotkeyCurrentlyPressed = false
+                handleKeyRelease()
+            }
+        }
 
-                if let startTime = keyPressStartTime {
-                    let pressDuration = Date().timeIntervalSince(startTime)
-                    let threshold = RecordingModePreferences.quickTapThreshold
-
-                    if pressDuration < threshold {
-                        onQuickTap?()
-                    } else {
-                        onKeyUp?()
-                    }
-
-                    keyPressStartTime = nil
-                } else {
-                    onKeyUp?()
+        // Handle regular key presses with modifiers
+        if (type == .keyDown || type == .keyUp) {
+            if hotkeyConfig.matches(event: event) {
+                if type == .keyDown && !isHotkeyCurrentlyPressed {
+                    keyPressStartTime = Date()
+                    isHotkeyCurrentlyPressed = true
+                    onKeyDown?()
+                    return Unmanaged.passUnretained(event)
+                } else if type == .keyUp && isHotkeyCurrentlyPressed {
+                    isHotkeyCurrentlyPressed = false
+                    handleKeyRelease()
+                    return Unmanaged.passUnretained(event)
                 }
             }
         }
 
         return Unmanaged.passUnretained(event)
+    }
+
+    private func handleKeyRelease() {
+        if let startTime = keyPressStartTime {
+            let pressDuration = Date().timeIntervalSince(startTime)
+            let threshold = RecordingModePreferences.quickTapThreshold
+
+            if pressDuration < threshold {
+                onQuickTap?()
+            } else {
+                onKeyUp?()
+            }
+
+            keyPressStartTime = nil
+        } else {
+            onKeyUp?()
+        }
     }
 
     private func checkAccessibilityPermission() -> Bool {

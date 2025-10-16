@@ -24,7 +24,7 @@ struct ContentView: View {
             )
 
             VStack(spacing: 8) {
-                Text("Hold Fn key to record")
+                Text("Press \(appState.hotkeyMonitor.hotkeyConfig.displayString) to record")
                     .font(.headline)
 
                 HStack(spacing: 4) {

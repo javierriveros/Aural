@@ -12,6 +12,7 @@ struct SettingsView: View {
     @State private var showFloatingWidget = true
     @State private var audioSpeedMultiplier: Float = 1.0
     @State private var textInjectionEnabled = false
+    @State private var hotkeyConfig = HotkeyConfiguration.default
 
     var body: some View {
         VStack(spacing: 20) {
@@ -113,16 +114,7 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    HStack {
-                        Text("Global Hotkey:")
-                        Spacer()
-                        Text("Fn")
-                            .font(.system(.body, design: .monospaced))
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color(nsColor: .controlBackgroundColor))
-                            .cornerRadius(4)
-                    }
+                    HotkeyRecorderView(configuration: $hotkeyConfig)
                 } header: {
                     Text("Hotkey Configuration")
                         .font(.headline)
@@ -166,24 +158,26 @@ struct SettingsView: View {
     }
 
     private func loadSettings() {
-        apiKey = UserDefaults.standard.string(forKey: "openai_api_key") ?? ""
+        apiKey = UserDefaults.standard.string(forKey: UserDefaultsKeys.openAIAPIKey) ?? ""
         recordingMode = RecordingModePreferences.mode
-        soundsEnabled = UserDefaults.standard.bool(forKey: "sounds_enabled")
+        soundsEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.soundsEnabled)
         showFloatingWidget = appState.showFloatingWidget
         audioSpeedMultiplier = appState.audioSpeedMultiplier
         textInjectionEnabled = appState.textInjectionEnabled
+        hotkeyConfig = HotkeyRepository().load()
     }
 
     private func saveSettings() {
-        UserDefaults.standard.set(apiKey, forKey: "openai_api_key")
+        UserDefaults.standard.set(apiKey, forKey: UserDefaultsKeys.openAIAPIKey)
         RecordingModePreferences.mode = recordingMode
-        UserDefaults.standard.set(soundsEnabled, forKey: "sounds_enabled")
-        UserDefaults.standard.set(audioSpeedMultiplier, forKey: "audio_speed_multiplier")
-        UserDefaults.standard.set(textInjectionEnabled, forKey: "text_injection_enabled")
+        UserDefaults.standard.set(soundsEnabled, forKey: UserDefaultsKeys.soundsEnabled)
+        UserDefaults.standard.set(audioSpeedMultiplier, forKey: UserDefaultsKeys.audioSpeedMultiplier)
+        UserDefaults.standard.set(textInjectionEnabled, forKey: UserDefaultsKeys.textInjectionEnabled)
 
         appState.showFloatingWidget = showFloatingWidget
         appState.audioSpeedMultiplier = audioSpeedMultiplier
         appState.textInjectionEnabled = textInjectionEnabled
+        appState.hotkeyMonitor.updateHotkey(hotkeyConfig)
     }
 
     private func testAPIKey() {
@@ -197,7 +191,7 @@ struct SettingsView: View {
                     .appendingPathComponent("test.txt")
                 try "test".write(to: testURL, atomically: true, encoding: .utf8)
 
-                UserDefaults.standard.set(apiKey, forKey: "openai_api_key")
+                UserDefaults.standard.set(apiKey, forKey: UserDefaultsKeys.openAIAPIKey)
 
                 let service = WhisperService()
                 _ = try await service.transcribe(audioURL: testURL)

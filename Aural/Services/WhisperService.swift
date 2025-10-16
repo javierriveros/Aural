@@ -26,7 +26,7 @@ final class WhisperService {
 
     private let apiURL = URL(string: "https://api.openai.com/v1/audio/transcriptions")!
     private var apiKey: String? {
-        UserDefaults.standard.string(forKey: "openai_api_key")
+        UserDefaults.standard.string(forKey: UserDefaultsKeys.openAIAPIKey)
     }
 
     func transcribe(audioURL: URL) async throws -> String {
