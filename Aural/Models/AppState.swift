@@ -10,6 +10,7 @@ final class AppState {
     let soundPlayer = SoundPlayer.shared
     let floatingWidget = FloatingWidgetController()
     let audioProcessor = AudioProcessor()
+    let textInjectionService = TextInjectionService()
 
     var modelContext: ModelContext?
 
@@ -44,10 +45,16 @@ final class AppState {
         }
     }
 
+    var textInjectionEnabled: Bool {
+        get { UserDefaults.standard.bool(forKey: "text_injection_enabled") }
+        set { UserDefaults.standard.set(newValue, forKey: "text_injection_enabled") }
+    }
+
     init() {
         UserDefaults.standard.register(defaults: [
             "show_floating_widget": true,
-            "audio_speed_multiplier": 1.0
+            "audio_speed_multiplier": 1.0,
+            "text_injection_enabled": false
         ])
         setupHotkeyCallbacks()
         _ = hotkeyMonitor.startMonitoring()
@@ -189,7 +196,16 @@ final class AppState {
 
             let transcriptionText = try await whisperService.transcribe(audioURL: processedURL)
             lastTranscription = transcriptionText
-            copyToClipboard(transcriptionText)
+
+            if textInjectionEnabled {
+                do {
+                    try textInjectionService.injectText(transcriptionText)
+                } catch {
+                    copyToClipboard(transcriptionText)
+                }
+            } else {
+                copyToClipboard(transcriptionText)
+            }
 
             saveTranscription(text: transcriptionText, duration: duration)
 

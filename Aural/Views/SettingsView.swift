@@ -10,6 +10,7 @@ struct SettingsView: View {
     @State private var soundsEnabled = true
     @State private var showFloatingWidget = true
     @State private var audioSpeedMultiplier: Float = 1.0
+    @State private var textInjectionEnabled = false
 
     var body: some View {
         VStack(spacing: 20) {
@@ -93,6 +94,24 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Toggle("Enable Text Injection", isOn: $textInjectionEnabled)
+                        .toggleStyle(.switch)
+
+                    Text("When enabled, transcribed text will be typed at the cursor position. Requires Accessibility permission. Falls back to clipboard if injection fails.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    if textInjectionEnabled {
+                        Text("⚠️ Make sure to grant Accessibility permissions in System Settings")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+                } header: {
+                    Text("Text Injection")
+                        .font(.headline)
+                }
+
+                Section {
                     HStack {
                         Text("Global Hotkey:")
                         Spacer()
@@ -139,7 +158,7 @@ struct SettingsView: View {
             }
         }
         .padding()
-        .frame(width: 500, height: 550)
+        .frame(width: 500, height: 650)
         .onAppear {
             loadSettings()
         }
@@ -152,6 +171,7 @@ struct SettingsView: View {
         showFloatingWidget = UserDefaults.standard.bool(forKey: "show_floating_widget")
         let speed = UserDefaults.standard.float(forKey: "audio_speed_multiplier")
         audioSpeedMultiplier = speed > 0 ? speed : 1.0
+        textInjectionEnabled = UserDefaults.standard.bool(forKey: "text_injection_enabled")
     }
 
     private func saveSettings() {
@@ -160,6 +180,7 @@ struct SettingsView: View {
         UserDefaults.standard.set(soundsEnabled, forKey: "sounds_enabled")
         UserDefaults.standard.set(showFloatingWidget, forKey: "show_floating_widget")
         UserDefaults.standard.set(audioSpeedMultiplier, forKey: "audio_speed_multiplier")
+        UserDefaults.standard.set(textInjectionEnabled, forKey: "text_injection_enabled")
     }
 
     private func testAPIKey() {
