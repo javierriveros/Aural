@@ -7,15 +7,21 @@ final class AppState {
     let audioRecorder = AudioRecorder()
     let hotkeyMonitor = HotkeyMonitor()
     let whisperService = WhisperService()
+    let soundPlayer = SoundPlayer.shared
 
     var modelContext: ModelContext?
 
     private(set) var isRecording = false
+    private(set) var isRecordingLocked = false
     private(set) var isTranscribing = false
     private(set) var lastTranscription: String?
     private(set) var lastError: String?
     private var recordingURL: URL?
     private var recordingStartTime: Date?
+
+    var recordingMode: RecordingMode {
+        RecordingModePreferences.mode
+    }
 
     init() {
         setupHotkeyCallbacks()
@@ -24,23 +30,94 @@ final class AppState {
 
     private func setupHotkeyCallbacks() {
         hotkeyMonitor.onKeyDown = { [weak self] in
-            self?.startRecording()
+            self?.handleKeyDown()
         }
 
         hotkeyMonitor.onKeyUp = { [weak self] in
-            self?.stopRecording()
+            self?.handleKeyUp()
+        }
+
+        hotkeyMonitor.onQuickTap = { [weak self] in
+            self?.handleQuickTap()
+        }
+    }
+
+    private func handleKeyDown() {
+        let mode = RecordingModePreferences.mode
+
+        switch mode {
+        case .holdOnly, .hybrid:
+            startRecording()
+        case .tapToLock:
+            break
+        }
+    }
+
+    private func handleKeyUp() {
+        let mode = RecordingModePreferences.mode
+
+        switch mode {
+        case .holdOnly:
+            stopRecording()
+        case .hybrid:
+            if !isRecordingLocked {
+                stopRecording()
+            }
+        case .tapToLock:
+            break
+        }
+    }
+
+    private func handleQuickTap() {
+        let mode = RecordingModePreferences.mode
+
+        switch mode {
+        case .tapToLock, .hybrid:
+            toggleLockedRecording()
+        case .holdOnly:
+            break
+        }
+    }
+
+    private func toggleLockedRecording() {
+        if isRecording && isRecordingLocked {
+            stopRecording()
+        } else if !isRecording {
+            startLockedRecording()
         }
     }
 
     private func startRecording() {
         guard !isRecording else { return }
 
+        soundPlayer.playRecordingStart()
+
         Task { @MainActor in
             do {
                 recordingStartTime = Date()
                 recordingURL = try await audioRecorder.startRecording()
                 isRecording = true
+                isRecordingLocked = false
             } catch {
+                soundPlayer.playError()
+                print("Failed to start recording: \(error)")
+            }
+        }
+    }
+
+    private func startLockedRecording() {
+        guard !isRecording else { return }
+
+        soundPlayer.playLockEngaged()
+
+        Task { @MainActor in
+            do {
+                recordingStartTime = Date()
+                recordingURL = try await audioRecorder.startRecording()
+                isRecording = true
+                isRecordingLocked = true
+            } catch {
+                soundPlayer.playError()
                 print("Failed to start recording: \(error)")
             }
         }
@@ -49,9 +126,12 @@ final class AppState {
     private func stopRecording() {
         guard isRecording else { return }
 
+        soundPlayer.playRecordingStop()
+
         Task { @MainActor in
             if let url = audioRecorder.stopRecording() {
                 isRecording = false
+                isRecordingLocked = false
                 await handleRecordingComplete(url: url)
             }
         }
@@ -71,8 +151,11 @@ final class AppState {
             saveTranscription(text: transcriptionText, duration: duration)
 
             try? FileManager.default.removeItem(at: url)
+
+            soundPlayer.playTranscriptionComplete()
         } catch {
             lastError = error.localizedDescription
+            soundPlayer.playError()
         }
 
         isTranscribing = false

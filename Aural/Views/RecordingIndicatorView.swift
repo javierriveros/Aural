@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RecordingIndicatorView: View {
     let isRecording: Bool
+    let isLocked: Bool
     let duration: TimeInterval
 
     @State private var pulseAnimation = false
@@ -18,8 +19,14 @@ struct RecordingIndicatorView: View {
                     value: pulseAnimation
                 )
 
-            Text(isRecording ? "Recording" : "Ready")
+            Text(recordingStatusText)
                 .font(.headline)
+
+            if isLocked && isRecording {
+                Image(systemName: "lock.fill")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            }
 
             if isRecording {
                 Text(formatDuration(duration))
@@ -39,6 +46,13 @@ struct RecordingIndicatorView: View {
         }
     }
 
+    private var recordingStatusText: String {
+        if isRecording {
+            return isLocked ? "Recording (Locked)" : "Recording"
+        }
+        return "Ready"
+    }
+
     private func formatDuration(_ duration: TimeInterval) -> String {
         let minutes = Int(duration) / 60
         let seconds = Int(duration) % 60
@@ -49,8 +63,9 @@ struct RecordingIndicatorView: View {
 
 #Preview {
     VStack(spacing: 20) {
-        RecordingIndicatorView(isRecording: false, duration: 0)
-        RecordingIndicatorView(isRecording: true, duration: 45.3)
+        RecordingIndicatorView(isRecording: false, isLocked: false, duration: 0)
+        RecordingIndicatorView(isRecording: true, isLocked: false, duration: 45.3)
+        RecordingIndicatorView(isRecording: true, isLocked: true, duration: 102.7)
     }
     .padding()
 }

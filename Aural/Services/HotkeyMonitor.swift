@@ -15,8 +15,11 @@ final class HotkeyMonitor {
 
     var onKeyDown: (() -> Void)?
     var onKeyUp: (() -> Void)?
+    var onQuickTap: (() -> Void)?
 
     private let targetKeyCode: CGKeyCode = 0x3F
+    private var keyPressStartTime: Date?
+    private var isFnKeyCurrentlyPressed = false
 
     init() {}
 
@@ -82,10 +85,27 @@ final class HotkeyMonitor {
             let flags = event.flags
             let fnKeyPressed = flags.contains(.maskSecondaryFn)
 
-            if fnKeyPressed {
+            if fnKeyPressed && !isFnKeyCurrentlyPressed {
+                keyPressStartTime = Date()
+                isFnKeyCurrentlyPressed = true
                 onKeyDown?()
-            } else {
-                onKeyUp?()
+            } else if !fnKeyPressed && isFnKeyCurrentlyPressed {
+                isFnKeyCurrentlyPressed = false
+
+                if let startTime = keyPressStartTime {
+                    let pressDuration = Date().timeIntervalSince(startTime)
+                    let threshold = RecordingModePreferences.quickTapThreshold
+
+                    if pressDuration < threshold {
+                        onQuickTap?()
+                    } else {
+                        onKeyUp?()
+                    }
+
+                    keyPressStartTime = nil
+                } else {
+                    onKeyUp?()
+                }
             }
         }
 

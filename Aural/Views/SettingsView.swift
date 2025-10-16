@@ -6,6 +6,8 @@ struct SettingsView: View {
     @State private var isTestingAPI = false
     @State private var testResult: String?
     @State private var showSuccess = false
+    @State private var recordingMode: RecordingMode = .hybrid
+    @State private var soundsEnabled = true
 
     var body: some View {
         VStack(spacing: 20) {
@@ -41,6 +43,25 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Picker("Recording Mode", selection: $recordingMode) {
+                        ForEach(RecordingMode.allCases) { mode in
+                            Text(mode.rawValue).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.menu)
+
+                    Text(recordingMode.description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    Toggle("Enable Sounds", isOn: $soundsEnabled)
+                        .toggleStyle(.switch)
+                } header: {
+                    Text("Recording")
+                        .font(.headline)
+                }
+
+                Section {
                     HStack {
                         Text("Global Hotkey:")
                         Spacer()
@@ -51,9 +72,6 @@ struct SettingsView: View {
                             .background(Color(nsColor: .controlBackgroundColor))
                             .cornerRadius(4)
                     }
-                    Text("Hold the Fn key to record audio")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
                 } header: {
                     Text("Hotkey Configuration")
                         .font(.headline)
@@ -98,10 +116,14 @@ struct SettingsView: View {
 
     private func loadSettings() {
         apiKey = UserDefaults.standard.string(forKey: "openai_api_key") ?? ""
+        recordingMode = RecordingModePreferences.mode
+        soundsEnabled = UserDefaults.standard.bool(forKey: "sounds_enabled")
     }
 
     private func saveSettings() {
         UserDefaults.standard.set(apiKey, forKey: "openai_api_key")
+        RecordingModePreferences.mode = recordingMode
+        UserDefaults.standard.set(soundsEnabled, forKey: "sounds_enabled")
     }
 
     private func testAPIKey() {

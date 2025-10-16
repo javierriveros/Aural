@@ -19,6 +19,7 @@ struct ContentView: View {
         VStack(spacing: 20) {
             RecordingIndicatorView(
                 isRecording: appState.audioRecorder.state == .recording,
+                isLocked: appState.isRecordingLocked,
                 duration: appState.audioRecorder.recordingDuration
             )
 
