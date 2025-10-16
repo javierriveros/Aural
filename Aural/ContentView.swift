@@ -8,62 +8,64 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var audioRecorder = AudioRecorder()
-    @State private var lastRecordingURL: URL?
-    @State private var errorMessage: String?
+    @Environment(AppState.self) private var appState
 
     var body: some View {
         VStack(spacing: 20) {
             RecordingIndicatorView(
-                isRecording: audioRecorder.state == .recording,
-                duration: audioRecorder.recordingDuration
+                isRecording: appState.audioRecorder.state == .recording,
+                duration: appState.audioRecorder.recordingDuration
             )
 
-            HStack(spacing: 16) {
-                Button("Start Recording") {
-                    Task {
-                        do {
-                            let url = try await audioRecorder.startRecording()
-                            lastRecordingURL = url
-                            errorMessage = nil
-                        } catch {
-                            errorMessage = error.localizedDescription
-                        }
-                    }
-                }
-                .disabled(audioRecorder.state == .recording)
+            VStack(spacing: 8) {
+                Text("Hold Fn key to record")
+                    .font(.headline)
 
-                Button("Stop Recording") {
-                    lastRecordingURL = audioRecorder.stopRecording()
-                }
-                .disabled(audioRecorder.state != .recording)
-            }
-
-            if let error = errorMessage {
-                Text(error)
-                    .foregroundStyle(.red)
-                    .font(.caption)
-            }
-
-            if let url = lastRecordingURL {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Last Recording:")
-                        .font(.headline)
-                    Text(url.lastPathComponent)
-                        .font(.system(.caption, design: .monospaced))
+                HStack(spacing: 4) {
+                    Image(systemName: hotkeyStatusIcon)
+                        .foregroundStyle(hotkeyStatusColor)
+                    Text(hotkeyStatusText)
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding()
-                .background(Color(nsColor: .controlBackgroundColor))
-                .cornerRadius(8)
             }
+
+            Spacer()
+
+            Text("Transcription history will appear here")
+                .foregroundStyle(.secondary)
+                .font(.callout)
         }
         .padding()
         .frame(minWidth: 400, minHeight: 300)
+    }
+
+    private var hotkeyStatusIcon: String {
+        switch appState.hotkeyMonitor.state {
+        case .active: return "checkmark.circle.fill"
+        case .inactive: return "circle"
+        case .permissionDenied: return "exclamationmark.triangle.fill"
+        }
+    }
+
+    private var hotkeyStatusColor: Color {
+        switch appState.hotkeyMonitor.state {
+        case .active: return .green
+        case .inactive: return .gray
+        case .permissionDenied: return .orange
+        }
+    }
+
+    private var hotkeyStatusText: String {
+        switch appState.hotkeyMonitor.state {
+        case .active: return "Hotkey monitoring active"
+        case .inactive: return "Hotkey monitoring inactive"
+        case .permissionDenied: return "Accessibility permission required"
+        }
     }
 }
 
 #Preview {
     ContentView()
+        .environment(AppState())
 }
