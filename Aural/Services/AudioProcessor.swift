@@ -36,67 +36,73 @@ final class AudioProcessor {
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension("m4a")
 
-        return try await withCheckedThrowingContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                do {
-                    let asset = AVURLAsset(url: url)
+        do {
+            return try await withCheckedThrowingContinuation { continuation in
+                DispatchQueue.global(qos: .userInitiated).async {
+                    do {
+                        let asset = AVURLAsset(url: url)
 
-                    guard let assetTrack = asset.tracks(withMediaType: .audio).first else {
-                        continuation.resume(throwing: ProcessingError.invalidAudioFile)
-                        return
-                    }
-
-                    let composition = AVMutableComposition()
-                    guard let compositionTrack = composition.addMutableTrack(
-                        withMediaType: .audio,
-                        preferredTrackID: kCMPersistentTrackID_Invalid
-                    ) else {
-                        continuation.resume(throwing: ProcessingError.processingFailed(NSError(domain: "AudioProcessor", code: -1)))
-                        return
-                    }
-
-                    try compositionTrack.insertTimeRange(
-                        CMTimeRange(start: .zero, duration: asset.duration),
-                        of: assetTrack,
-                        at: .zero
-                    )
-
-                    compositionTrack.scaleTimeRange(
-                        CMTimeRange(start: .zero, duration: asset.duration),
-                        toDuration: CMTimeMultiplyByFloat64(asset.duration, multiplier: Float64(1.0 / speedMultiplier))
-                    )
-
-                    guard let exportSession = AVAssetExportSession(
-                        asset: composition,
-                        presetName: AVAssetExportPresetAppleM4A
-                    ) else {
-                        continuation.resume(throwing: ProcessingError.processingFailed(NSError(domain: "AudioProcessor", code: -2)))
-                        return
-                    }
-
-                    exportSession.outputURL = outputURL
-                    exportSession.outputFileType = .m4a
-
-                    exportSession.exportAsynchronously {
-                        switch exportSession.status {
-                        case .completed:
-                            continuation.resume(returning: outputURL)
-                        case .failed:
-                            if let error = exportSession.error {
-                                continuation.resume(throwing: ProcessingError.processingFailed(error))
-                            } else {
-                                continuation.resume(throwing: ProcessingError.processingFailed(NSError(domain: "AudioProcessor", code: -3)))
-                            }
-                        case .cancelled:
-                            continuation.resume(throwing: ProcessingError.processingFailed(NSError(domain: "AudioProcessor", code: -4)))
-                        default:
-                            continuation.resume(throwing: ProcessingError.processingFailed(NSError(domain: "AudioProcessor", code: -5)))
+                        guard let assetTrack = asset.tracks(withMediaType: .audio).first else {
+                            continuation.resume(throwing: ProcessingError.invalidAudioFile)
+                            return
                         }
+
+                        let composition = AVMutableComposition()
+                        guard let compositionTrack = composition.addMutableTrack(
+                            withMediaType: .audio,
+                            preferredTrackID: kCMPersistentTrackID_Invalid
+                        ) else {
+                            continuation.resume(throwing: ProcessingError.processingFailed(NSError(domain: "AudioProcessor", code: -1)))
+                            return
+                        }
+
+                        try compositionTrack.insertTimeRange(
+                            CMTimeRange(start: .zero, duration: asset.duration),
+                            of: assetTrack,
+                            at: .zero
+                        )
+
+                        compositionTrack.scaleTimeRange(
+                            CMTimeRange(start: .zero, duration: asset.duration),
+                            toDuration: CMTimeMultiplyByFloat64(asset.duration, multiplier: Float64(1.0 / speedMultiplier))
+                        )
+
+                        guard let exportSession = AVAssetExportSession(
+                            asset: composition,
+                            presetName: AVAssetExportPresetAppleM4A
+                        ) else {
+                            continuation.resume(throwing: ProcessingError.processingFailed(NSError(domain: "AudioProcessor", code: -2)))
+                            return
+                        }
+
+                        exportSession.outputURL = outputURL
+                        exportSession.outputFileType = .m4a
+
+                        exportSession.exportAsynchronously {
+                            switch exportSession.status {
+                            case .completed:
+                                continuation.resume(returning: outputURL)
+                            case .failed, .cancelled:
+                                try? FileManager.default.removeItem(at: outputURL)
+
+                                if let error = exportSession.error {
+                                    continuation.resume(throwing: ProcessingError.processingFailed(error))
+                                } else {
+                                    continuation.resume(throwing: ProcessingError.processingFailed(NSError(domain: "AudioProcessor", code: -3)))
+                                }
+                            default:
+                                try? FileManager.default.removeItem(at: outputURL)
+                                continuation.resume(throwing: ProcessingError.processingFailed(NSError(domain: "AudioProcessor", code: -5)))
+                            }
+                        }
+                    } catch {
+                        continuation.resume(throwing: ProcessingError.processingFailed(error))
                     }
-                } catch {
-                    continuation.resume(throwing: ProcessingError.processingFailed(error))
                 }
             }
+        } catch {
+            try? FileManager.default.removeItem(at: outputURL)
+            throw error
         }
     }
 

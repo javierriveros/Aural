@@ -24,6 +24,7 @@ final class AudioRecorder {
         case permissionDenied
         case recordingFailed
         case audioEngineFailure
+        case audioWriteFailure(Error)
 
         var errorDescription: String? {
             switch self {
@@ -33,6 +34,8 @@ final class AudioRecorder {
                 return "Failed to start recording"
             case .audioEngineFailure:
                 return "Audio engine initialization failed"
+            case .audioWriteFailure(let error):
+                return "Failed to write audio data: \(error.localizedDescription)"
             }
         }
     }
@@ -44,6 +47,8 @@ final class AudioRecorder {
     private(set) var state: RecordingState = .idle
     private(set) var recordingDuration: TimeInterval = 0
     private var timer: Timer?
+    private var writeErrorCount = 0
+    private let maxWriteErrors = 10
 
     init() {}
 
@@ -81,8 +86,21 @@ final class AudioRecorder {
             throw RecordingError.audioEngineFailure
         }
 
-        inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { buffer, _ in
-            try? audioFile.write(from: buffer)
+        inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { [weak self] buffer, _ in
+            guard let self = self else { return }
+
+            do {
+                try audioFile.write(from: buffer)
+                self.writeErrorCount = 0
+            } catch {
+                self.writeErrorCount += 1
+
+                if self.writeErrorCount >= self.maxWriteErrors {
+                    Task { @MainActor in
+                        self.state = .failed(RecordingError.audioWriteFailure(error))
+                    }
+                }
+            }
         }
 
         do {
@@ -97,6 +115,7 @@ final class AudioRecorder {
         self.recordingURL = audioFilename
         self.state = .recording
         self.recordingDuration = 0
+        self.writeErrorCount = 0
 
         startTimer()
 

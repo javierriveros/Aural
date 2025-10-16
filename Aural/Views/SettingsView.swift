@@ -298,7 +298,9 @@ struct SettingsView: View {
     }
 
     private func loadSettings() {
-        apiKey = UserDefaults.standard.string(forKey: UserDefaultsKeys.openAIAPIKey) ?? ""
+        migrateAPIKeyFromUserDefaults()
+
+        apiKey = appState.whisperService.apiKey ?? ""
         recordingMode = RecordingModePreferences.mode
         soundsEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.soundsEnabled)
         showFloatingWidget = appState.showFloatingWidget
@@ -310,8 +312,18 @@ struct SettingsView: View {
         keyboardShortcuts = KeyboardShortcutsRepository().load()
     }
 
+    private func migrateAPIKeyFromUserDefaults() {
+        if let oldKey = UserDefaults.standard.string(forKey: UserDefaultsKeys.openAIAPIKey),
+           !oldKey.isEmpty,
+           appState.whisperService.apiKey == nil {
+            try? appState.whisperService.setAPIKey(oldKey)
+            UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.openAIAPIKey)
+        }
+    }
+
     private func saveSettings() {
-        UserDefaults.standard.set(apiKey, forKey: UserDefaultsKeys.openAIAPIKey)
+        try? appState.whisperService.setAPIKey(apiKey)
+
         RecordingModePreferences.mode = recordingMode
         UserDefaults.standard.set(soundsEnabled, forKey: UserDefaultsKeys.soundsEnabled)
         UserDefaults.standard.set(audioSpeedMultiplier, forKey: UserDefaultsKeys.audioSpeedMultiplier)
@@ -337,16 +349,13 @@ struct SettingsView: View {
 
         Task {
             do {
-                let testURL = FileManager.default.temporaryDirectory
-                    .appendingPathComponent("test.txt")
-                try "test".write(to: testURL, atomically: true, encoding: .utf8)
+                try appState.whisperService.setAPIKey(apiKey)
 
-                UserDefaults.standard.set(apiKey, forKey: UserDefaultsKeys.openAIAPIKey)
+                let testAudioURL = try await createTestAudioFile()
 
-                let service = WhisperService()
-                _ = try await service.transcribe(audioURL: testURL)
+                _ = try await appState.whisperService.transcribe(audioURL: testAudioURL)
 
-                try? FileManager.default.removeItem(at: testURL)
+                try? FileManager.default.removeItem(at: testAudioURL)
 
                 await MainActor.run {
                     testResult = "API key is valid!"
@@ -360,6 +369,23 @@ struct SettingsView: View {
                     isTestingAPI = false
                 }
             }
+        }
+    }
+
+    private func createTestAudioFile() async throws -> URL {
+        let testURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("m4a")
+
+        let audioRecorder = AudioRecorder()
+        try await audioRecorder.startRecording()
+        try await Task.sleep(nanoseconds: 500_000_000)
+
+        if let recordedURL = audioRecorder.stopRecording() {
+            try FileManager.default.moveItem(at: recordedURL, to: testURL)
+            return testURL
+        } else {
+            throw NSError(domain: "SettingsView", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to create test audio"])
         }
     }
 }

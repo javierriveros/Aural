@@ -7,6 +7,7 @@ final class WhisperService {
         case networkError(Error)
         case invalidResponse
         case apiError(String)
+        case keychainError(Error)
 
         var errorDescription: String? {
             switch self {
@@ -20,13 +21,28 @@ final class WhisperService {
                 return "Invalid response from Whisper API"
             case .apiError(let message):
                 return "API error: \(message)"
+            case .keychainError(let error):
+                return "Keychain error: \(error.localizedDescription)"
             }
         }
     }
 
     private let apiURL = URL(string: "https://api.openai.com/v1/audio/transcriptions")!
-    private var apiKey: String? {
-        UserDefaults.standard.string(forKey: UserDefaultsKeys.openAIAPIKey)
+    private let keychain = KeychainService()
+    private let apiKeyIdentifier = "openai_api_key"
+
+    var apiKey: String? {
+        get {
+            try? keychain.retrieve(forKey: apiKeyIdentifier)
+        }
+    }
+
+    func setAPIKey(_ key: String) throws {
+        try keychain.save(key, forKey: apiKeyIdentifier)
+    }
+
+    func deleteAPIKey() throws {
+        try keychain.delete(forKey: apiKeyIdentifier)
     }
 
     func transcribe(audioURL: URL) async throws -> String {

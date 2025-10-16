@@ -238,11 +238,11 @@ struct ContentView: View {
     }
 
     private func startPermissionCheck() {
-        permissionCheckTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+        permissionCheckTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak appState] _ in
+            guard let appState = appState else { return }
+
             if appState.hotkeyMonitor.state == .permissionDenied {
-                // Check silently without showing prompt
                 if appState.hotkeyMonitor.checkAccessibilityPermissionSilently() {
-                    // Permission granted, restart monitoring
                     _ = appState.hotkeyMonitor.startMonitoring()
                 }
             }
