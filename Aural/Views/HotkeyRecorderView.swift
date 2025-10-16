@@ -6,7 +6,7 @@ import Carbon
 struct HotkeyRecorderView: View {
     @Binding var configuration: HotkeyConfiguration
     @State private var isRecording = false
-    @State private var recordedConfig: HotkeyConfiguration?
+    @State private var eventMonitor: Any?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -33,9 +33,8 @@ struct HotkeyRecorderView: View {
 
             HStack(spacing: 12) {
                 Button(isRecording ? "Recording..." : "Record Hotkey") {
-                    startRecording()
+                    toggleRecording()
                 }
-                .disabled(isRecording)
 
                 if configuration != .default {
                     Button("Reset to Default") {
@@ -51,15 +50,20 @@ struct HotkeyRecorderView: View {
         .onAppear {
             setupEventMonitor()
         }
+        .onDisappear {
+            removeEventMonitor()
+        }
     }
 
-    private func startRecording() {
-        isRecording = true
+    private func toggleRecording() {
+        isRecording.toggle()
     }
 
     private func setupEventMonitor() {
-        NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { event in
-            guard isRecording else { return event }
+        guard eventMonitor == nil else { return }
+
+        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { [self] event in
+            guard self.isRecording else { return event }
 
             let keyCode = CGKeyCode(event.keyCode)
             var modifiers: CGEventFlags = []
@@ -80,16 +84,26 @@ struct HotkeyRecorderView: View {
                 modifiers.insert(.maskSecondaryFn)
             }
 
-            // Only accept if there's at least one modifier or it's a function key
             let isFunctionKey = keyCode >= 122 && keyCode <= 135
             if !modifiers.isEmpty || isFunctionKey {
                 let newConfig = HotkeyConfiguration(keyCode: keyCode, modifiers: modifiers)
-                configuration = newConfig
-                isRecording = false
-                return nil // Consume the event
+
+                DispatchQueue.main.async {
+                    self.configuration = newConfig
+                    self.isRecording = false
+                }
+
+                return nil
             }
 
             return event
+        }
+    }
+
+    private func removeEventMonitor() {
+        if let monitor = eventMonitor {
+            NSEvent.removeMonitor(monitor)
+            eventMonitor = nil
         }
     }
 }
