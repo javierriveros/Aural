@@ -8,6 +8,8 @@ struct SettingsView: View {
     @State private var showSuccess = false
     @State private var recordingMode: RecordingMode = .hybrid
     @State private var soundsEnabled = true
+    @State private var showFloatingWidget = true
+    @State private var audioSpeedMultiplier: Float = 1.0
 
     var body: some View {
         VStack(spacing: 20) {
@@ -56,8 +58,37 @@ struct SettingsView: View {
 
                     Toggle("Enable Sounds", isOn: $soundsEnabled)
                         .toggleStyle(.switch)
+
+                    Toggle("Show Floating Widget", isOn: $showFloatingWidget)
+                        .toggleStyle(.switch)
                 } header: {
                     Text("Recording")
+                        .font(.headline)
+                }
+
+                Section {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Audio Speed:")
+                            Spacer()
+                            Text("\(String(format: "%.1fx", audioSpeedMultiplier))")
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Slider(value: $audioSpeedMultiplier, in: 1.0...2.0, step: 0.1)
+
+                        Text("Speed up audio before transcription to reduce API costs. 1.5x-2.0x recommended.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        if audioSpeedMultiplier > 1.0 {
+                            Text("Estimated savings: ~\(Int((audioSpeedMultiplier - 1.0) / audioSpeedMultiplier * 100))%")
+                                .font(.caption)
+                                .foregroundStyle(.green)
+                        }
+                    }
+                } header: {
+                    Text("Audio Processing")
                         .font(.headline)
                 }
 
@@ -108,7 +139,7 @@ struct SettingsView: View {
             }
         }
         .padding()
-        .frame(width: 500, height: 450)
+        .frame(width: 500, height: 550)
         .onAppear {
             loadSettings()
         }
@@ -118,12 +149,17 @@ struct SettingsView: View {
         apiKey = UserDefaults.standard.string(forKey: "openai_api_key") ?? ""
         recordingMode = RecordingModePreferences.mode
         soundsEnabled = UserDefaults.standard.bool(forKey: "sounds_enabled")
+        showFloatingWidget = UserDefaults.standard.bool(forKey: "show_floating_widget")
+        let speed = UserDefaults.standard.float(forKey: "audio_speed_multiplier")
+        audioSpeedMultiplier = speed > 0 ? speed : 1.0
     }
 
     private func saveSettings() {
         UserDefaults.standard.set(apiKey, forKey: "openai_api_key")
         RecordingModePreferences.mode = recordingMode
         UserDefaults.standard.set(soundsEnabled, forKey: "sounds_enabled")
+        UserDefaults.standard.set(showFloatingWidget, forKey: "show_floating_widget")
+        UserDefaults.standard.set(audioSpeedMultiplier, forKey: "audio_speed_multiplier")
     }
 
     private func testAPIKey() {

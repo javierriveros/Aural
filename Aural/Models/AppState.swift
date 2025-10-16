@@ -8,6 +8,8 @@ final class AppState {
     let hotkeyMonitor = HotkeyMonitor()
     let whisperService = WhisperService()
     let soundPlayer = SoundPlayer.shared
+    let floatingWidget = FloatingWidgetController()
+    let audioProcessor = AudioProcessor()
 
     var modelContext: ModelContext?
 
@@ -18,14 +20,38 @@ final class AppState {
     private(set) var lastError: String?
     private var recordingURL: URL?
     private var recordingStartTime: Date?
+    private var widgetUpdateTimer: Timer?
 
     var recordingMode: RecordingMode {
         RecordingModePreferences.mode
     }
 
+    var showFloatingWidget: Bool {
+        get { UserDefaults.standard.bool(forKey: "show_floating_widget") }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "show_floating_widget")
+            updateFloatingWidgetVisibility()
+        }
+    }
+
+    var audioSpeedMultiplier: Float {
+        get {
+            let value = UserDefaults.standard.float(forKey: "audio_speed_multiplier")
+            return value > 0 ? value : 1.0
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "audio_speed_multiplier")
+        }
+    }
+
     init() {
+        UserDefaults.standard.register(defaults: [
+            "show_floating_widget": true,
+            "audio_speed_multiplier": 1.0
+        ])
         setupHotkeyCallbacks()
         _ = hotkeyMonitor.startMonitoring()
+        updateFloatingWidgetVisibility()
     }
 
     private func setupHotkeyCallbacks() {
@@ -98,9 +124,11 @@ final class AppState {
                 recordingURL = try await audioRecorder.startRecording()
                 isRecording = true
                 isRecordingLocked = false
+                startWidgetUpdateTimer()
             } catch {
                 soundPlayer.playError()
                 print("Failed to start recording: \(error)")
+                updateFloatingWidget()
             }
         }
     }
@@ -116,9 +144,11 @@ final class AppState {
                 recordingURL = try await audioRecorder.startRecording()
                 isRecording = true
                 isRecordingLocked = true
+                startWidgetUpdateTimer()
             } catch {
                 soundPlayer.playError()
                 print("Failed to start recording: \(error)")
+                updateFloatingWidget()
             }
         }
     }
@@ -127,6 +157,7 @@ final class AppState {
         guard isRecording else { return }
 
         soundPlayer.playRecordingStop()
+        stopWidgetUpdateTimer()
 
         Task { @MainActor in
             if let url = audioRecorder.stopRecording() {
@@ -140,25 +171,39 @@ final class AppState {
     private func handleRecordingComplete(url: URL) async {
         isTranscribing = true
         lastError = nil
+        updateFloatingWidget()
 
         let duration = recordingStartTime.map { Date().timeIntervalSince($0) } ?? 0
 
         do {
-            let transcriptionText = try await whisperService.transcribe(audioURL: url)
+            let processedURL: URL
+            if audioSpeedMultiplier != 1.0 {
+                processedURL = try await audioProcessor.speedUpAudio(
+                    url: url,
+                    speedMultiplier: audioSpeedMultiplier
+                )
+                try? FileManager.default.removeItem(at: url)
+            } else {
+                processedURL = url
+            }
+
+            let transcriptionText = try await whisperService.transcribe(audioURL: processedURL)
             lastTranscription = transcriptionText
             copyToClipboard(transcriptionText)
 
             saveTranscription(text: transcriptionText, duration: duration)
 
-            try? FileManager.default.removeItem(at: url)
+            try? FileManager.default.removeItem(at: processedURL)
 
             soundPlayer.playTranscriptionComplete()
         } catch {
             lastError = error.localizedDescription
             soundPlayer.playError()
+            try? FileManager.default.removeItem(at: url)
         }
 
         isTranscribing = false
+        updateFloatingWidget()
     }
 
     private func saveTranscription(text: String, duration: TimeInterval) {
@@ -180,7 +225,42 @@ final class AppState {
         pasteboard.setString(text, forType: .string)
     }
 
+    private func updateFloatingWidgetVisibility() {
+        if showFloatingWidget {
+            floatingWidget.show()
+            updateFloatingWidget()
+        } else {
+            floatingWidget.hide()
+        }
+    }
+
+    private func updateFloatingWidget() {
+        let state: WidgetState
+        if isTranscribing {
+            state = .transcribing
+        } else if isRecording {
+            let duration = audioRecorder.recordingDuration
+            state = .recording(duration: duration, isLocked: isRecordingLocked)
+        } else {
+            state = .idle
+        }
+        floatingWidget.updateState(state)
+    }
+
+    private func startWidgetUpdateTimer() {
+        stopWidgetUpdateTimer()
+        widgetUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+            self?.updateFloatingWidget()
+        }
+    }
+
+    private func stopWidgetUpdateTimer() {
+        widgetUpdateTimer?.invalidate()
+        widgetUpdateTimer = nil
+    }
+
     deinit {
         hotkeyMonitor.stopMonitoring()
+        stopWidgetUpdateTimer()
     }
 }
