@@ -3,11 +3,13 @@
 All notable changes to Aural will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and this project adheres to
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
 ### Added
+
 - Open source documentation (LICENSE, CONTRIBUTING.md, CODE_OF_CONDUCT.md)
 - GitHub issue and PR templates
 - Comprehensive .gitignore for Swift/Xcode projects
@@ -15,7 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2025-10-16
 
 ### Added
+
 - **Core Features**
+
   - Global hotkey recording with customizable hotkeys (default: Fn key)
   - AI-powered transcription using OpenAI Whisper API
   - Automatic clipboard copy of transcriptions
@@ -23,11 +27,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Modern SwiftUI interface with animations
 
 - **Recording Modes**
+
   - Hold Only mode (classic push-to-talk)
   - Tap to Lock mode (toggle recording)
   - Hybrid mode (hold for temporary, tap for locked)
 
 - **Smart Features**
+
   - Custom Vocabulary with word/phrase replacements
   - Voice Commands for punctuation, formatting, and editing
   - Keyboard Shortcuts for quick actions
@@ -35,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Text Injection at cursor position (via Accessibility)
 
 - **UI/UX**
+
   - Floating widget with recording status
   - Animated recording indicators with pulse effects
   - Sound effects for user feedback
@@ -42,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Dark mode support
 
 - **Security & Reliability**
+
   - Secure API key storage in macOS Keychain
   - Automatic migration from UserDefaults to Keychain
   - Safe optional handling (zero force unwraps)
@@ -62,11 +70,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - SoundPlayer for audio feedback
 
 ### Changed
+
 - Improved API key validation with real audio file testing
 - Enhanced permission request flow with auto-detection
 - Modernized UI with gradient colors and smooth animations
 
 ### Fixed
+
 - Force unwraps replaced with safe optional binding
 - Timer retain cycles prevented with weak references
 - Silent audio write failures now properly reported
@@ -74,9 +84,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Permission popup no longer appears repeatedly
 
 ### Security
+
 - **BREAKING**: API keys now stored in Keychain instead of UserDefaults
   - Existing keys automatically migrated on first launch
   - Significantly improved security for sensitive credentials
 
-[Unreleased]: https://github.com/yourusername/aural/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/yourusername/aural/releases/tag/v1.0.0
+[Unreleased]: https://github.com/javierriveros/aural/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/javierriveros/aural/releases/tag/v1.0.0

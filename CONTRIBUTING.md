@@ -1,6 +1,7 @@
 # Contributing to Aural
 
-Thank you for considering contributing to Aural! We welcome contributions from everyone and appreciate your help making this project better.
+Thank you for considering contributing to Aural! We welcome contributions from
+everyone and appreciate your help making this project better.
 
 ## Table of Contents
 
@@ -18,7 +19,9 @@ Thank you for considering contributing to Aural! We welcome contributions from e
 
 ## Code of Conduct
 
-This project adheres to a Code of Conduct that all contributors are expected to follow. Please read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) before contributing.
+This project adheres to a Code of Conduct that all contributors are expected to
+follow. Please read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) before
+contributing.
 
 ---
 
@@ -26,9 +29,11 @@ This project adheres to a Code of Conduct that all contributors are expected to 
 
 ### Reporting Bugs
 
-Before creating a bug report, please check the existing issues to avoid duplicates.
+Before creating a bug report, please check the existing issues to avoid
+duplicates.
 
 **When filing a bug report, include:**
+
 - **Clear, descriptive title** - Use a title that clearly identifies the issue
 - **Steps to reproduce** - Detailed steps to reproduce the behavior
 - **Expected behavior** - What you expected to happen
@@ -41,6 +46,7 @@ Before creating a bug report, please check the existing issues to avoid duplicat
 - **Logs** - Check Console.app for relevant error messages
 
 **Example:**
+
 ```
 Title: Recording fails with "Audio engine initialization failed" error
 
@@ -62,11 +68,13 @@ Environment:
 ### Suggesting Features
 
 Feature suggestions are welcome! Before creating a suggestion:
+
 - Check if the feature already exists in the latest version
 - Search existing issues to avoid duplicates
 - Consider if it aligns with the project's goals
 
 **When suggesting a feature, include:**
+
 - **Clear use case** - Why is this feature needed?
 - **Proposed solution** - How should it work?
 - **Alternatives considered** - What other approaches did you think about?
@@ -76,10 +84,12 @@ Feature suggestions are welcome! Before creating a suggestion:
 
 We love code contributions! Here's how to get started:
 
-1. **Find an issue** - Look for issues labeled `good first issue` or `help wanted`
+1. **Find an issue** - Look for issues labeled `good first issue` or
+   `help wanted`
 2. **Ask to be assigned** - Comment on the issue to avoid duplicate work
 3. **Fork the repository** - Create your own fork
-4. **Create a branch** - Name it descriptively (e.g., `feature/custom-hotkeys` or `fix/memory-leak`)
+4. **Create a branch** - Name it descriptively (e.g., `feature/custom-hotkeys`
+   or `fix/memory-leak`)
 5. **Make your changes** - Follow the coding guidelines below
 6. **Test thoroughly** - Ensure nothing breaks
 7. **Submit a PR** - Follow the pull request process below
@@ -89,6 +99,7 @@ We love code contributions! Here's how to get started:
 ## Development Setup
 
 ### Prerequisites
+
 - macOS 14.0+ (Sonoma or later)
 - Xcode 15+ with Command Line Tools
 - OpenAI API key (for testing transcription)
@@ -96,22 +107,26 @@ We love code contributions! Here's how to get started:
 ### Setup Steps
 
 1. **Fork and clone**
+
    ```bash
    git clone https://github.com/YOUR-USERNAME/aural.git
    cd aural
    ```
 
 2. **Open in Xcode**
+
    ```bash
    open Aural.xcodeproj
    ```
 
 3. **Configure signing**
+
    - Select the Aural target
    - Go to "Signing & Capabilities"
    - Select your development team
 
 4. **Build and run**
+
    - Press `⌘R` or click Run
    - Grant necessary permissions when prompted
 
@@ -129,24 +144,31 @@ We love code contributions! Here's how to get started:
 We follow standard Swift conventions with some additions:
 
 #### General
+
 - **No force unwraps** - Use safe optional binding (`guard let`, `if let`)
-- **Explicit types** - Use type inference, but be explicit when it improves clarity
+- **Explicit types** - Use type inference, but be explicit when it improves
+  clarity
 - **Use `let` by default** - Only use `var` when mutation is needed
 - **Prefer `guard` for early returns** - Makes code flow clearer
 
 #### SwiftUI
-- **Use `@Observable`** for state management (not `@StateObject` / `@ObservedObject`)
+
+- **Use `@Observable`** for state management (not `@StateObject` /
+  `@ObservedObject`)
 - **Extract reusable views** - Keep views under ~100 lines
-- **Use design system** - Reference `DesignSystem.swift` for colors, spacing, fonts
+- **Use design system** - Reference `DesignSystem.swift` for colors, spacing,
+  fonts
 - **Prefer async/await** - Use modern concurrency over callbacks
 
 #### Naming
+
 - **Descriptive names** - Clarity over brevity
 - **Verb methods** - `startRecording()` not `recording()`
 - **Bool properties** - Prefix with `is`, `has`, `should` (e.g., `isRecording`)
 - **Services** - Suffix with `Service` (e.g., `WhisperService`)
 
 #### Example
+
 ```swift
 // ✅ Good
 func processTranscription(_ text: String) async throws -> String {
@@ -181,6 +203,7 @@ func process(_ t: String) throws -> String {
 - **Log errors** - Use `print()` for now (os.log planned)
 
 #### Example
+
 ```swift
 enum RecordingError: LocalizedError {
     case permissionDenied
@@ -219,6 +242,7 @@ enum RecordingError: LocalizedError {
 We follow conventional commits for clear history:
 
 ### Format
+
 ```
 <type>(<scope>): <subject>
 
@@ -228,6 +252,7 @@ We follow conventional commits for clear history:
 ```
 
 ### Types
+
 - **feat**: New feature
 - **fix**: Bug fix
 - **refactor**: Code change that neither fixes a bug nor adds a feature
@@ -238,6 +263,7 @@ We follow conventional commits for clear history:
 - **chore**: Maintenance tasks
 
 ### Examples
+
 ```
 feat(vocabulary): Add support for regex patterns
 
@@ -272,6 +298,7 @@ Existing keys will be migrated automatically on first launch.
 ### Before Submitting
 
 1. **Update from main**
+
    ```bash
    git checkout main
    git pull upstream main
@@ -280,6 +307,7 @@ Existing keys will be migrated automatically on first launch.
    ```
 
 2. **Test thoroughly**
+
    - Build succeeds without warnings
    - All features work as expected
    - No regressions in existing functionality
@@ -294,22 +322,27 @@ Existing keys will be migrated automatically on first launch.
 When creating a PR, include:
 
 **Description**
+
 - What does this PR do?
 - Why is this change needed?
 
 **Type of Change**
+
 - [ ] Bug fix (non-breaking change)
 - [ ] New feature (non-breaking change)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] Breaking change (fix or feature that would cause existing functionality to
+      not work as expected)
 - [ ] Documentation update
 
 **Testing**
+
 - How did you test this?
 - What scenarios did you cover?
 
 **Screenshots** (if applicable)
 
 **Checklist**
+
 - [ ] Code follows project style guidelines
 - [ ] Self-review completed
 - [ ] Comments added for complex logic
