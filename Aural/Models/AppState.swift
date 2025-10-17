@@ -132,7 +132,9 @@ final class AppState {
 
         switch mode {
         case .holdOnly, .hybrid:
-            startRecording()
+            if !isRecording {
+                startRecording()
+            }
         case .tapToLock:
             break
         }
@@ -142,10 +144,8 @@ final class AppState {
         let mode = RecordingModePreferences.mode
 
         switch mode {
-        case .holdOnly:
-            stopRecording()
-        case .hybrid:
-            if !isRecordingLocked {
+        case .holdOnly, .hybrid:
+            if isRecording {
                 stopRecording()
             }
         case .tapToLock:
@@ -167,6 +167,9 @@ final class AppState {
     private func toggleLockedRecording() {
         if isRecording && isRecordingLocked {
             stopRecording()
+        } else if isRecording && !isRecordingLocked {
+            isRecordingLocked = true
+            updateFloatingWidget()
         } else if !isRecording {
             startLockedRecording()
         }
