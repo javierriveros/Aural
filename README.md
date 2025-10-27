@@ -21,6 +21,12 @@ voice commands, and powerful AI transcription.
 
 ---
 
+<div align="center">
+
+![Aural Main Screen](docs/assets/aural_main_screen.png)
+
+</div>
+
 ## ✨ Features
 
 ### 🎤 **Core Transcription**
