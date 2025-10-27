@@ -342,7 +342,7 @@ struct SettingsView: View {
         appState.shortcutManager.updateConfiguration(keyboardShortcuts)
     }
 
-    private func testAPIKey() {
+    func testAPIKey() {
         isTestingAPI = true
         testResult = nil
         showSuccess = false

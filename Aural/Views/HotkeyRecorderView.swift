@@ -1,5 +1,5 @@
-import SwiftUI
 import Carbon
+import SwiftUI
 
 // MARK: - Hotkey Recorder View
 

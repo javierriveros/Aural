@@ -1,6 +1,6 @@
-import Foundation
-import CoreGraphics
 import AVFoundation
+import CoreGraphics
+import Foundation
 
 // MARK: - User Defaults Keys
 

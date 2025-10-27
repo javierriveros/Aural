@@ -1,0 +1,32 @@
+disabled_rules:
+  - trailing_whitespace
+  - line_length
+  - todo
+
+opt_in_rules:
+  - empty_count
+  - first_where
+  - sorted_first_last
+  - sorted_imports
+  - switch_case_alignment
+  - vertical_parameter_alignment_on_call
+  - yoda_condition
+
+excluded:
+  - Carthage
+  - Pods
+  - .build
+  - DerivedData
+
+analyzer_rules:
+  - explicit_self
+
+force_cast: warning
+force_try: warning
+function_body_length: 300
+cyclomatic_complexity: 20
+file_length: 1000
+type_body_length: 500
+
+reporter: "xcode"
+

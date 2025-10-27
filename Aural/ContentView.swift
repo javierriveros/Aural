@@ -1,3 +1,5 @@
+import AppKit
+import SwiftData
 //
 //  ContentView.swift
 //  Aural
@@ -6,8 +8,6 @@
 //
 
 import SwiftUI
-import SwiftData
-import AppKit
 
 struct ContentView: View {
     @Environment(AppState.self) private var appState

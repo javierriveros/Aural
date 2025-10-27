@@ -1,5 +1,5 @@
-import Foundation
 import Carbon
+import Foundation
 
 // MARK: - Hotkey Configuration
 

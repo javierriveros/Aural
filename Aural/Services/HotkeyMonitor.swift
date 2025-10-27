@@ -111,7 +111,7 @@ final class HotkeyMonitor {
         }
 
         // Handle regular key presses with modifiers
-        if (type == .keyDown || type == .keyUp) {
+        if type == .keyDown || type == .keyUp {
             if hotkeyConfig.matches(event: event) {
                 if type == .keyDown && !isHotkeyCurrentlyPressed {
                     keyPressStartTime = Date()

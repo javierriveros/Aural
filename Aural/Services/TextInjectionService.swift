@@ -1,6 +1,6 @@
-import Foundation
 import AppKit
 import ApplicationServices
+import Foundation
 
 final class TextInjectionService {
     enum InjectionError: LocalizedError {

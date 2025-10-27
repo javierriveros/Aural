@@ -1,3 +1,4 @@
+import SwiftData
 //
 //  AuralApp.swift
 //  Aural
@@ -6,7 +7,6 @@
 //
 
 import SwiftUI
-import SwiftData
 
 @main
 struct AuralApp: App {

@@ -1,5 +1,5 @@
-import Foundation
 import AppKit
+import Foundation
 import SwiftData
 
 @Observable
@@ -297,7 +297,6 @@ final class AppState {
             print("Failed to save transcription: \(error)")
         }
     }
-
 
     private func updateFloatingWidgetVisibility() {
         if showFloatingWidget {
