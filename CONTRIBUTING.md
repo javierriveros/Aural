@@ -285,10 +285,9 @@ instances to never deallocate.
 ```
 
 ```
-refactor: Move API key to Keychain for security
+refactor: Update API key storage implementation
 
-BREAKING CHANGE: API keys now stored in Keychain instead of UserDefaults.
-Existing keys will be migrated automatically on first launch.
+BREAKING CHANGE: Update documentation to reflect UserDefaults storage.
 ```
 
 ---

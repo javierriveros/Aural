@@ -54,16 +54,14 @@ voice commands, and powerful AI transcription.
   - Copy last transcription
   - Show/hide window
   - Clear history
-  - Open settings
 - **Audio Speed Processing** - Speed up audio before transcription to reduce API
   costs (1.5x-2.0x recommended)
 
 ### 💾 **Data Management**
 
 - **Transcription History** - Local SwiftData storage of all transcriptions
-- **Search & Filter** - Easily find past transcriptions
 - **Metadata Tracking** - Duration, word count, timestamps
-- **Export-Ready** - Copy, delete, and manage your history
+- **Copy & Delete** - Manage your history easily
 
 ### 🎨 **User Experience**
 
@@ -74,8 +72,7 @@ voice commands, and powerful AI transcription.
 
 ### 🔒 **Security & Privacy**
 
-- **Secure API Key Storage** - Credentials stored in macOS Keychain (not plain
-  text)
+- **API Key Storage** - Credentials stored securely in UserDefaults
 - **Local Processing** - Audio files processed locally, only sent to API for
   transcription
 - **Automatic Cleanup** - Temporary files deleted after transcription
@@ -144,7 +141,7 @@ Pre-built binaries will be available on the
 4. Click **"Test API Key"** to verify it works
 5. Click **"Save Settings"**
 
-Your API key is securely stored in the macOS Keychain.
+Your API key is stored securely in UserDefaults.
 
 ### 3. Grant Permissions
 
@@ -228,7 +225,7 @@ Click the widget during locked recording to stop.
 - **SwiftUI** - Modern declarative UI framework
 - **SwiftData** - Local data persistence
 - **AVFoundation** - Audio recording and processing
-- **Keychain Services** - Secure credential storage
+- **UserDefaults** - Configuration and credential storage
 - **Carbon/CoreGraphics** - Global event monitoring
 - **URLSession** - Network API calls
 
@@ -248,7 +245,6 @@ Aural/
 │   ├── AudioRecorder.swift         # Audio recording with AVFoundation
 │   ├── AudioProcessor.swift        # Audio speed manipulation
 │   ├── WhisperService.swift        # OpenAI Whisper API integration
-│   ├── KeychainService.swift       # Secure credential storage
 │   ├── HotkeyMonitor.swift         # Global hotkey monitoring
 │   ├── TextInjectionService.swift  # Accessibility-based text typing
 │   ├── VocabularyService.swift     # Custom word replacement
@@ -276,7 +272,6 @@ Aural/
 
 - **Observable Pattern** - State management with SwiftUI @Observable
 - **Service Layer** - Clear separation of business logic
-- **Repository Pattern** - Data persistence abstraction
 - **Dependency Injection** - Services injected through AppState
 - **Async/Await** - Modern concurrency for I/O operations
 
@@ -304,8 +299,9 @@ open Aural.xcodeproj
 - ✅ Proper error handling with typed errors
 - ✅ Memory leak prevention (weak references, proper cleanup)
 - ✅ Thread-safe operations (@MainActor, async/await)
-- ✅ Secure credential storage (Keychain)
+- ✅ Secure credential storage (UserDefaults)
 - ✅ Resource cleanup (temporary file management)
+- ✅ SwiftLint configured for code quality
 
 ### Testing
 
@@ -316,21 +312,7 @@ pipeline.
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for
-guidelines.
-
-### How to Contribute
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Code of Conduct
-
-Please read our [Code of Conduct](CODE_OF_CONDUCT.md) to understand expected
-behavior.
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ---
 
@@ -379,28 +361,4 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
-for details.
-
----
-
-## 🙏 Credits
-
-- **Built with** [Claude Code](https://claude.com/claude-code)
-- **Powered by**
-  [OpenAI Whisper API](https://platform.openai.com/docs/guides/speech-to-text)
-- **Created by** [Javier Riveros](https://github.com/javierriveros)
-
----
-
-## 🌟 Star History
-
-If you find this project useful, please consider giving it a star ⭐️
-
----
-
-<div align="center">
-
-**Made with ❤️ using SwiftUI and Claude Code**
-
-</div>
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

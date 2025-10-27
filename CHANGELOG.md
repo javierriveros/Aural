@@ -10,9 +10,8 @@ and this project adheres to
 
 ### Added
 
-- Open source documentation (LICENSE, CONTRIBUTING.md, CODE_OF_CONDUCT.md)
-- GitHub issue and PR templates
-- Comprehensive .gitignore for Swift/Xcode projects
+- SwiftLint configuration and linting guide for code quality
+- `.swiftlint.yml` with sensible defaults
 
 ## [1.0.0] - 2025-10-16
 
@@ -36,7 +35,7 @@ and this project adheres to
 
   - Custom Vocabulary with word/phrase replacements
   - Voice Commands for punctuation, formatting, and editing
-  - Keyboard Shortcuts for quick actions
+  - Keyboard Shortcuts for common actions
   - Audio Speed Processing (1.5x-2.0x) to reduce API costs
   - Text Injection at cursor position (via Accessibility)
 
@@ -50,8 +49,7 @@ and this project adheres to
 
 - **Security & Reliability**
 
-  - Secure API key storage in macOS Keychain
-  - Automatic migration from UserDefaults to Keychain
+  - API key storage in UserDefaults
   - Safe optional handling (zero force unwraps)
   - Proper error handling with typed errors
   - Memory leak prevention
@@ -60,8 +58,7 @@ and this project adheres to
 - **Services**
   - AudioRecorder with error tracking
   - AudioProcessor for speed manipulation
-  - WhisperService with Keychain integration
-  - KeychainService for secure credential storage
+  - WhisperService for OpenAI API integration
   - HotkeyMonitor for global event monitoring
   - TextInjectionService for accessibility-based typing
   - VocabularyService for custom replacements
@@ -82,12 +79,7 @@ and this project adheres to
 - Silent audio write failures now properly reported
 - Temporary file cleanup on processing failures
 - Permission popup no longer appears repeatedly
-
-### Security
-
-- **BREAKING**: API keys now stored in Keychain instead of UserDefaults
-  - Existing keys automatically migrated on first launch
-  - Significantly improved security for sensitive credentials
+- Documentation corrections for API key storage
 
 [Unreleased]: https://github.com/javierriveros/aural/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/javierriveros/aural/releases/tag/v1.0.0
