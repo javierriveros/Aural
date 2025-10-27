@@ -55,20 +55,19 @@ struct FloatingWidgetView: View {
         .padding(.horizontal, Spacing.md)
         .padding(.vertical, Spacing.sm)
         .background(
-            ZStack {
-                RoundedRectangle(cornerRadius: CornerRadius.md)
-                    .fill(.ultraThinMaterial)
-
-                RoundedRectangle(cornerRadius: CornerRadius.md)
-                    .strokeBorder(
-                        LinearGradient(
-                            colors: isRecording ? [BrandColors.primaryBlue.opacity(0.3), BrandColors.primaryCyan.opacity(0.3)] : [.clear],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1
-                    )
-            }
+            RoundedRectangle(cornerRadius: CornerRadius.md)
+                .fill(.ultraThinMaterial)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.md)
+                .strokeBorder(
+                    LinearGradient(
+                        colors: isRecording ? [BrandColors.primaryBlue.opacity(0.3), BrandColors.primaryCyan.opacity(0.3)] : [.clear],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
         )
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
         .shadow(
@@ -77,6 +76,8 @@ struct FloatingWidgetView: View {
             x: 0,
             y: 4
         )
+        .compositingGroup()
+        .padding(20)
         .contentShape(RoundedRectangle(cornerRadius: CornerRadius.md))
         .onTapGesture {
             onTap()

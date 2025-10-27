@@ -231,11 +231,17 @@ final class AppState {
     }
 
     private func handleRecordingComplete(url: URL) async {
+        let duration = recordingStartTime.map { Date().timeIntervalSince($0) } ?? 0
+
+        if duration <= 1.0 {
+            FileManager.default.safelyRemoveItem(at: url)
+            updateFloatingWidget()
+            return
+        }
+
         isTranscribing = true
         lastError = nil
         updateFloatingWidget()
-
-        let duration = recordingStartTime.map { Date().timeIntervalSince($0) } ?? 0
 
         do {
             let processedURL: URL

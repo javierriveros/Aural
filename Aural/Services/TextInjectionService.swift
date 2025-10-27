@@ -28,11 +28,21 @@ final class TextInjectionService {
             throw InjectionError.accessibilityPermissionDenied
         }
 
-        if tryAccessibilityInsertion(text) {
+        if isOwnAppFocused() {
+            throw InjectionError.fallbackToClipboard
+        }
+
+        usleep(50000)
+
+        if tryClipboardPaste(text) {
             return
         }
 
         if tryKeyboardSimulation(text) {
+            return
+        }
+
+        if tryAccessibilityInsertion(text) {
             return
         }
 
@@ -65,8 +75,54 @@ final class TextInjectionService {
         return false
     }
 
+    private func tryClipboardPaste(_ text: String) -> Bool {
+        let pasteboard = NSPasteboard.general
+        let previousContents = pasteboard.string(forType: .string)
+
+        pasteboard.declareTypes([.string], owner: nil)
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+
+        usleep(50000)
+
+        let success = simulateCommandV()
+
+        usleep(50000)
+
+        if let previousContents = previousContents {
+            pasteboard.clearContents()
+            pasteboard.setString(previousContents, forType: .string)
+        }
+
+        return success
+    }
+
+    private func simulateCommandV() -> Bool {
+        guard let source = CGEventSource(stateID: .combinedSessionState) else {
+            return false
+        }
+
+        let vKeyCode: CGKeyCode = 0x09
+
+        guard let keyDownEvent = CGEvent(keyboardEventSource: source, virtualKey: vKeyCode, keyDown: true),
+              let keyUpEvent = CGEvent(keyboardEventSource: source, virtualKey: vKeyCode, keyDown: false) else {
+            return false
+        }
+
+        keyDownEvent.flags = .maskCommand
+        keyUpEvent.flags = .maskCommand
+
+        keyDownEvent.post(tap: .cgAnnotatedSessionEventTap)
+        usleep(10000)
+        keyUpEvent.post(tap: .cgAnnotatedSessionEventTap)
+
+        return true
+    }
+
     private func tryKeyboardSimulation(_ text: String) -> Bool {
-        let source = CGEventSource(stateID: .hidSystemState)
+        guard let source = CGEventSource(stateID: .hidSystemState) else {
+            return false
+        }
 
         for character in text {
             let unicodeScalars = String(character).unicodeScalars
@@ -74,22 +130,29 @@ final class TextInjectionService {
 
             let keyCode = UniChar(truncatingIfNeeded: unicodeScalar.value)
 
-            if let keyDownEvent = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: true) {
-                keyDownEvent.keyboardSetUnicodeString(stringLength: 1, unicodeString: [keyCode])
-                keyDownEvent.post(tap: .cghidEventTap)
+            guard let keyDownEvent = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: true),
+                  let keyUpEvent = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: false) else {
+                continue
             }
 
-            if let keyUpEvent = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: false) {
-                keyUpEvent.keyboardSetUnicodeString(stringLength: 1, unicodeString: [keyCode])
-                keyUpEvent.post(tap: .cghidEventTap)
-            }
-            
-            
+            keyDownEvent.keyboardSetUnicodeString(stringLength: 1, unicodeString: [keyCode])
+            keyUpEvent.keyboardSetUnicodeString(stringLength: 1, unicodeString: [keyCode])
 
+            keyDownEvent.post(tap: .cgAnnotatedSessionEventTap)
+            usleep(1000)
+            keyUpEvent.post(tap: .cgAnnotatedSessionEventTap)
             usleep(1000)
         }
 
         return true
+    }
+
+    private func isOwnAppFocused() -> Bool {
+        guard let frontmostApp = NSWorkspace.shared.frontmostApplication else {
+            return false
+        }
+        let currentApp = NSRunningApplication.current
+        return frontmostApp.processIdentifier == currentApp.processIdentifier
     }
 
     private func getFocusedElement() -> AXUIElement? {
