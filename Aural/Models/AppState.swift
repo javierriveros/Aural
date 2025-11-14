@@ -351,22 +351,22 @@ final class AppState {
             updateFloatingWidget()
             waveformWindow.hide()
         case .waveform:
-            // Show simple widget when idle, waveform window when recording
+            // In waveform mode: only show waveform window when recording, nothing when idle
             if isRecording {
                 floatingWidget.hide()
                 // Waveform window is shown/updated by updateRecordingVisualization()
             } else {
-                floatingWidget.show()
-                updateFloatingWidget()
+                // Hide both widgets when idle in waveform mode
+                floatingWidget.hide()
                 waveformWindow.hide()
             }
         }
     }
 
     private func updateFloatingWidget() {
-        // Don't update simple widget when in waveform mode and recording
-        // (the waveform window is shown instead)
-        if widgetDisplayMode == .waveform && isRecording {
+        // Don't update simple widget when in waveform mode
+        // (in waveform mode, only the waveform window is shown during recording, nothing when idle)
+        if widgetDisplayMode == .waveform {
             return
         }
 
