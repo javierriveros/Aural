@@ -46,58 +46,27 @@ struct WaveformRecordingView: View {
             }
 
             // Tap to stop hint
-            Text(isLocked ? "Tap to stop recording" : "Release to stop")
+            Text(instructionText)
                 .font(Typography.caption)
                 .foregroundStyle(.secondary)
         }
         .padding(.vertical, Spacing.lg)
         .padding(.horizontal, Spacing.xl)
         .background(
-            ZStack {
-                // Darker background with gradient for depth
-                RoundedRectangle(cornerRadius: CornerRadius.lg)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.white.opacity(0.95),
-                                Color.white.opacity(0.85)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-
-                // Subtle material overlay
-                RoundedRectangle(cornerRadius: CornerRadius.lg)
-                    .fill(.thinMaterial)
-                    .opacity(0.5)
-            }
+            // Clean white background with material
+            RoundedRectangle(cornerRadius: CornerRadius.lg)
+                .fill(.regularMaterial)
+                .background(
+                    RoundedRectangle(cornerRadius: CornerRadius.lg)
+                        .fill(Color.white)
+                )
         )
         .overlay(
             RoundedRectangle(cornerRadius: CornerRadius.lg)
                 .strokeBorder(
-                    Color.black.opacity(0.08),
-                    lineWidth: 1
+                    Color.black.opacity(0.06),
+                    lineWidth: 0.5
                 )
-        )
-        // Multiple shadow layers for depth
-        .shadow(
-            color: Color.black.opacity(0.08),
-            radius: 4,
-            x: 0,
-            y: 2
-        )
-        .shadow(
-            color: Color.black.opacity(0.12),
-            radius: 12,
-            x: 0,
-            y: 6
-        )
-        .shadow(
-            color: Color.black.opacity(0.16),
-            radius: 32,
-            x: 0,
-            y: 12
         )
         .contentShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
         .onTapGesture {
@@ -112,6 +81,14 @@ struct WaveformRecordingView: View {
 
     private var stateColor: Color {
         isLocked ? BrandColors.warning : BrandColors.primaryBlue
+    }
+
+    private var instructionText: String {
+        if isLocked {
+            return "Tap anywhere to stop"
+        } else {
+            return "Hold key to continue recording"
+        }
     }
 
     private func formatDuration(_ duration: TimeInterval) -> String {

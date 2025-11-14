@@ -45,6 +45,16 @@ final class WaveformWindowController {
         panel.isOpaque = false
         panel.contentView = hostingView
 
+        // Configure shadow for better visibility
+        if let shadowView = panel.contentView?.superview {
+            shadowView.shadow = NSShadow()
+            shadowView.wantsLayer = true
+            shadowView.layer?.shadowOpacity = 0.3
+            shadowView.layer?.shadowRadius = 24
+            shadowView.layer?.shadowOffset = CGSize(width: 0, height: 8)
+            shadowView.layer?.shadowColor = NSColor.black.cgColor
+        }
+
         self.panel = panel
         self.hostingView = hostingView
     }

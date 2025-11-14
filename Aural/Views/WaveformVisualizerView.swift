@@ -24,9 +24,15 @@ struct WaveformVisualizerView: View {
                 Color(red: 0.15, green: 0.15, blue: 0.15)  // Almost black for unlocked
 
             for i in 0..<barCount {
-                // Get level for this bar (with bounds checking)
-                let levelIndex = min(i * audioLevels.count / barCount, audioLevels.count - 1)
-                let level = audioLevels[levelIndex]
+                // Interpolate between samples for smoother visualization
+                let exactIndex = Float(i) * Float(audioLevels.count - 1) / Float(barCount - 1)
+                let lowerIndex = Int(floor(exactIndex))
+                let upperIndex = min(lowerIndex + 1, audioLevels.count - 1)
+                let fraction = exactIndex - Float(lowerIndex)
+
+                let lowerLevel = audioLevels[lowerIndex]
+                let upperLevel = audioLevels[upperIndex]
+                let level = lowerLevel + (upperLevel - lowerLevel) * fraction
 
                 // Calculate bar height - Much taller! Use more of the available height
                 let maxHeight = size.height * 1.8  // Increased from 0.9 to 1.8 for much taller bars

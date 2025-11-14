@@ -13,14 +13,14 @@ final class AudioLevelMonitor {
     private let maxSamples: Int
 
     // Smoothing factor for visual stability (0.0 = no smoothing, 1.0 = max smoothing)
-    // Reduced for more responsive animation
-    private let smoothingFactor: Float = 0.15
+    // Very low for super responsive animation like Super Whisper
+    private let smoothingFactor: Float = 0.05
     private var previousLevel: Float = 0.0
 
     // Minimum threshold to avoid showing noise
     private let noiseFloor: Float = 0.01
 
-    init(maxSamples: Int = 60) {
+    init(maxSamples: Int = 120) {  // Increased for smoother interpolation
         self.maxSamples = maxSamples
         self.recentLevels = Array(repeating: 0.0, count: maxSamples)
     }
