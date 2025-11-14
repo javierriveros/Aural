@@ -10,13 +10,13 @@ struct WaveformRecordingView: View {
 
     var body: some View {
         VStack(spacing: Spacing.md) {
-            // Waveform visualizer
+            // Waveform visualizer with more height
             WaveformVisualizerView(
                 audioLevels: audioLevels,
                 barCount: 50,
                 isLocked: isLocked
             )
-            .frame(height: 100)
+            .frame(height: 120)  // Increased height for taller bars
             .padding(.horizontal, Spacing.lg)
 
             // Recording info
@@ -53,28 +53,51 @@ struct WaveformRecordingView: View {
         .padding(.vertical, Spacing.lg)
         .padding(.horizontal, Spacing.xl)
         .background(
-            RoundedRectangle(cornerRadius: CornerRadius.lg)
-                .fill(.ultraThinMaterial)
+            ZStack {
+                // Darker background with gradient for depth
+                RoundedRectangle(cornerRadius: CornerRadius.lg)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.95),
+                                Color.white.opacity(0.85)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+
+                // Subtle material overlay
+                RoundedRectangle(cornerRadius: CornerRadius.lg)
+                    .fill(.thinMaterial)
+                    .opacity(0.5)
+            }
         )
         .overlay(
             RoundedRectangle(cornerRadius: CornerRadius.lg)
                 .strokeBorder(
-                    LinearGradient(
-                        colors: [
-                            stateColor.opacity(0.4),
-                            stateColor.opacity(0.2)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1.5
+                    Color.black.opacity(0.08),
+                    lineWidth: 1
                 )
         )
+        // Multiple shadow layers for depth
         .shadow(
-            color: stateColor.opacity(0.3),
-            radius: 24,
+            color: Color.black.opacity(0.08),
+            radius: 4,
             x: 0,
-            y: 8
+            y: 2
+        )
+        .shadow(
+            color: Color.black.opacity(0.12),
+            radius: 12,
+            x: 0,
+            y: 6
+        )
+        .shadow(
+            color: Color.black.opacity(0.16),
+            radius: 32,
+            x: 0,
+            y: 12
         )
         .contentShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
         .onTapGesture {
