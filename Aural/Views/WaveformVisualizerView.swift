@@ -10,7 +10,7 @@ struct WaveformVisualizerView: View {
     // Phase offsets for staggered animation
     private let phaseOffsets: [Float]
 
-    @State private var previousBarHeights: [CGFloat] = []
+    @State private var previousBarHeights: [CGFloat]
 
     init(audioLevels: [Float], barCount: Int = 50, isLocked: Bool = false) {
         self.audioLevels = audioLevels
@@ -28,6 +28,9 @@ struct WaveformVisualizerView: View {
         self.phaseOffsets = (0..<barCount).map { i in
             Float(i) * 0.05  // Small offset per bar
         }
+
+        // Initialize previous bar heights
+        _previousBarHeights = State(initialValue: Array(repeating: 6.0, count: barCount))
     }
 
     var body: some View {
@@ -45,11 +48,6 @@ struct WaveformVisualizerView: View {
             // Calculate average of recent levels for smoother response
             let recentLevels = audioLevels.suffix(5)  // Last 5 samples
             let currentLevel = recentLevels.isEmpty ? 0.0 : recentLevels.reduce(0.0, +) / Float(recentLevels.count)
-
-            // Initialize previous heights if needed
-            if previousBarHeights.isEmpty {
-                previousBarHeights = Array(repeating: minBarHeight, count: barCount)
-            }
 
             for i in 0..<barCount {
                 // Apply variation to current level for this bar
