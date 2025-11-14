@@ -163,8 +163,10 @@ struct TranscriptionRow: View {
     }
 
     private func formatCost(_ cost: Double) -> String {
+        // Always show actual cost, even if very small
+        // Use 4 decimal places for precise tracking of small costs
         if cost < 0.01 {
-            return "$0.00"
+            return String(format: "$%.4f", cost)
         }
         return String(format: "$%.3f", cost)
     }
