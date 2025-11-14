@@ -198,7 +198,7 @@ final class AppState {
             stopRecording()
         } else if isRecording && !isRecordingLocked {
             isRecordingLocked = true
-            updateFloatingWidget()
+            updateRecordingVisualization()  // Update visualization with new locked state
         } else if !isRecording {
             startLockedRecording()
         }
@@ -216,6 +216,7 @@ final class AppState {
                 recordingURL = try await audioRecorder.startRecording()
                 isRecording = true
                 isRecordingLocked = false
+                updateFloatingWidgetVisibility()  // Ensure proper widget visibility
                 startWidgetUpdateTimer()
                 updateRecordingVisualization()
             } catch {
@@ -238,6 +239,7 @@ final class AppState {
                 recordingURL = try await audioRecorder.startRecording()
                 isRecording = true
                 isRecordingLocked = true
+                updateFloatingWidgetVisibility()  // Ensure proper widget visibility
                 startWidgetUpdateTimer()
                 updateRecordingVisualization()
             } catch {
@@ -254,15 +256,11 @@ final class AppState {
         soundPlayer.playRecordingStop()
         stopWidgetUpdateTimer()
 
-        // Hide waveform window if in waveform mode
-        if widgetDisplayMode == .waveform {
-            waveformWindow.hide()
-        }
-
         Task { @MainActor in
             if let url = audioRecorder.stopRecording() {
                 isRecording = false
                 isRecordingLocked = false
+                updateFloatingWidgetVisibility()  // Show simple widget again when idle
                 await handleRecordingComplete(url: url)
             }
         }
