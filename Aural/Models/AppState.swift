@@ -308,7 +308,12 @@ final class AppState {
                 ClipboardService.copy(transcriptionText)
             }
 
-            saveTranscription(text: transcriptionText, duration: duration)
+            // Calculate cost: $0.006 per minute
+            let costPerMinute = 0.006
+            let durationInMinutes = duration / 60.0
+            let cost = durationInMinutes * costPerMinute
+
+            saveTranscription(text: transcriptionText, duration: duration, cost: cost)
 
             FileManager.default.safelyRemoveItem(at: processedURL)
 
@@ -323,10 +328,10 @@ final class AppState {
         updateFloatingWidget()
     }
 
-    private func saveTranscription(text: String, duration: TimeInterval) {
+    private func saveTranscription(text: String, duration: TimeInterval, cost: Double) {
         guard let context = modelContext else { return }
 
-        let transcription = Transcription(text: text, duration: duration)
+        let transcription = Transcription(text: text, duration: duration, cost: cost)
         context.insert(transcription)
 
         do {
