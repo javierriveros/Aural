@@ -26,9 +26,9 @@ final class WaveformWindowController {
         }
         let hostingView = NSHostingView(rootView: contentView)
 
-        // Create panel with larger size for waveform display
+        // Create panel with larger size for waveform display (includes padding for shadow)
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 500, height: 240),
+            contentRect: NSRect(x: 0, y: 0, width: 548, height: 288),
             styleMask: [.nonactivatingPanel, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -39,21 +39,11 @@ final class WaveformWindowController {
         panel.isFloatingPanel = true
         panel.isMovableByWindowBackground = true  // Allow dragging
         panel.backgroundColor = .clear
-        panel.hasShadow = true  // Enable shadow
+        panel.hasShadow = false  // Disable NSPanel shadow, use SwiftUI shadow instead
         panel.titleVisibility = .hidden
         panel.titlebarAppearsTransparent = true
         panel.isOpaque = false
         panel.contentView = hostingView
-
-        // Configure shadow for better visibility
-        if let shadowView = panel.contentView?.superview {
-            shadowView.shadow = NSShadow()
-            shadowView.wantsLayer = true
-            shadowView.layer?.shadowOpacity = 0.3
-            shadowView.layer?.shadowRadius = 24
-            shadowView.layer?.shadowOffset = CGSize(width: 0, height: 8)
-            shadowView.layer?.shadowColor = NSColor.black.cgColor
-        }
 
         self.panel = panel
         self.hostingView = hostingView

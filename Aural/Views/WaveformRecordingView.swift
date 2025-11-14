@@ -68,6 +68,8 @@ struct WaveformRecordingView: View {
                     lineWidth: 0.5
                 )
         )
+        .shadow(color: Color.black.opacity(0.15), radius: 20, x: 0, y: 10)
+        .padding(24)  // Add padding so shadow has room to render
         .contentShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
         .onTapGesture {
             onTap()
@@ -85,9 +87,9 @@ struct WaveformRecordingView: View {
 
     private var instructionText: String {
         if isLocked {
-            return "Tap anywhere to stop"
+            return "Tap to stop"
         } else {
-            return "Hold key to continue recording"
+            return "Release to stop"
         }
     }
 
