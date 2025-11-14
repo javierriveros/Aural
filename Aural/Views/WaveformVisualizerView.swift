@@ -5,8 +5,6 @@ struct WaveformVisualizerView: View {
     let barCount: Int
     let isLocked: Bool
 
-    @State private var animationPhase: CGFloat = 0
-
     init(audioLevels: [Float], barCount: Int = 50, isLocked: Bool = false) {
         self.audioLevels = audioLevels
         self.barCount = barCount
@@ -32,13 +30,7 @@ struct WaveformVisualizerView: View {
 
                 // Calculate bar height - Much taller! Use more of the available height
                 let maxHeight = size.height * 1.8  // Increased from 0.9 to 1.8 for much taller bars
-                var barHeight = max(CGFloat(level) * maxHeight, minBarHeight)
-
-                // Add slight random variation for more organic feel when quiet
-                if level < 0.1 {
-                    let variation = sin(animationPhase + CGFloat(i) * 0.3) * 3
-                    barHeight = max(barHeight + variation, minBarHeight)
-                }
+                let barHeight = max(CGFloat(level) * maxHeight, minBarHeight)
 
                 // Calculate position (centered vertically)
                 let x = CGFloat(i) * barWidth + barSpacing / 2
@@ -60,12 +52,7 @@ struct WaveformVisualizerView: View {
                 context.fill(path, with: .color(baseColor.opacity(opacity)))
             }
         }
-        .onAppear {
-            // Subtle animation for idle state
-            withAnimation(.linear(duration: 2).repeatForever(autoreverses: false)) {
-                animationPhase = .pi * 2
-            }
-        }
+        .drawingGroup()  // Enable Metal acceleration for smoother rendering
     }
 }
 

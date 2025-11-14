@@ -13,7 +13,8 @@ final class AudioLevelMonitor {
     private let maxSamples: Int
 
     // Smoothing factor for visual stability (0.0 = no smoothing, 1.0 = max smoothing)
-    private let smoothingFactor: Float = 0.3
+    // Reduced for more responsive animation
+    private let smoothingFactor: Float = 0.15
     private var previousLevel: Float = 0.0
 
     // Minimum threshold to avoid showing noise

@@ -37,9 +37,9 @@ final class WaveformWindowController {
         panel.level = .floating
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.isFloatingPanel = true
-        panel.isMovableByWindowBackground = false  // Lock position to center
+        panel.isMovableByWindowBackground = true  // Allow dragging
         panel.backgroundColor = .clear
-        panel.hasShadow = false
+        panel.hasShadow = true  // Enable shadow
         panel.titleVisibility = .hidden
         panel.titlebarAppearsTransparent = true
         panel.isOpaque = false

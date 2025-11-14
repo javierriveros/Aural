@@ -395,16 +395,25 @@ final class AppState {
 
     private func startWidgetUpdateTimer() {
         stopWidgetUpdateTimer()
-        widgetUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+
+        // Use different update rates for waveform vs simple widget
+        // Waveform needs 60 FPS for smooth animation, simple widget only needs 10 FPS
+        let updateInterval: TimeInterval = (widgetDisplayMode == .waveform && isRecording) ? 1.0/60.0 : 0.1
+
+        // Create timer and add to run loop with common mode for better performance
+        let timer = Timer(timeInterval: updateInterval, repeats: true) { [weak self] _ in
             guard let self = self else { return }
             if self.widgetDisplayMode == .waveform && self.isRecording {
-                // Update waveform window with latest audio levels
+                // Update waveform window with latest audio levels at 60 FPS
                 self.updateRecordingVisualization()
             } else {
-                // Update simple widget
+                // Update simple widget at 10 FPS (sufficient for duration counter)
                 self.updateFloatingWidget()
             }
         }
+
+        RunLoop.current.add(timer, forMode: .common)
+        widgetUpdateTimer = timer
     }
 
     private func stopWidgetUpdateTimer() {
