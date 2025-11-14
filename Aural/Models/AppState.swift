@@ -366,6 +366,12 @@ final class AppState {
     }
 
     private func updateFloatingWidget() {
+        // Don't update simple widget when in waveform mode and recording
+        // (the waveform window is shown instead)
+        if widgetDisplayMode == .waveform && isRecording {
+            return
+        }
+
         let state: WidgetState
         if isTranscribing {
             state = .transcribing

@@ -17,8 +17,8 @@ final class AudioLevelMonitor {
     private let smoothingFactor: Float = 0.0
     private var previousLevel: Float = 0.0
 
-    // Minimum threshold to avoid showing noise
-    private let noiseFloor: Float = 0.01
+    // Minimum threshold to avoid showing noise (reduced for better sensitivity)
+    private let noiseFloor: Float = 0.005
 
     init(maxSamples: Int = 10) {  // Small buffer, we only need current level
         self.maxSamples = maxSamples
@@ -42,10 +42,11 @@ final class AudioLevelMonitor {
         let rms = sqrt(sum / Float(frameLength))
 
         // Normalize to 0.0-1.0 range (typical speech is around 0.1-0.3 RMS)
-        // We amplify it for better visualization
-        let normalizedLevel = min(rms * 3.0, 1.0)
+        // We amplify it significantly for better visualization (like Super Whisper)
+        // Higher gain = more sensitive and reactive waveforms
+        let normalizedLevel = min(rms * 10.0, 1.0)
 
-        // Apply noise floor
+        // Apply noise floor (reduced for better sensitivity to quiet speech)
         let level = normalizedLevel > noiseFloor ? normalizedLevel : 0.0
 
         // Apply smoothing for more stable visualization
