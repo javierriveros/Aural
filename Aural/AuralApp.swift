@@ -21,6 +21,23 @@ struct AuralApp: App {
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
+            // If migration fails, delete the old database and create a fresh one
+            print("Failed to create ModelContainer, attempting to reset database: \(error)")
+
+            // Get the default store URL and delete it
+            if let storeURL = modelConfiguration.url {
+                try? FileManager.default.removeItem(at: storeURL)
+                try? FileManager.default.removeItem(at: storeURL.deletingPathExtension().appendingPathExtension("wal"))
+                try? FileManager.default.removeItem(at: storeURL.deletingPathExtension().appendingPathExtension("shm"))
+
+                // Try creating the container again
+                do {
+                    return try ModelContainer(for: schema, configurations: [modelConfiguration])
+                } catch {
+                    fatalError("Could not create ModelContainer even after reset: \(error)")
+                }
+            }
+
             fatalError("Could not create ModelContainer: \(error)")
         }
     }()
