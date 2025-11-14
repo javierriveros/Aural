@@ -64,11 +64,12 @@ struct WaveformRecordingView: View {
         .overlay(
             RoundedRectangle(cornerRadius: CornerRadius.lg)
                 .strokeBorder(
-                    Color.black.opacity(0.06),
+                    Color.black.opacity(0.05),
                     lineWidth: 0.5
                 )
         )
-        .shadow(color: Color.black.opacity(0.15), radius: 20, x: 0, y: 10)
+        .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
+        .shadow(color: Color.black.opacity(0.06), radius: 16, x: 0, y: 8)
         .padding(24)  // Add padding so shadow has room to render
         .contentShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
         .onTapGesture {

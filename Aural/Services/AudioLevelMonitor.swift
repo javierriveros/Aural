@@ -20,7 +20,7 @@ final class AudioLevelMonitor {
     // Minimum threshold to avoid showing noise
     private let noiseFloor: Float = 0.01
 
-    init(maxSamples: Int = 120) {  // Increased for smoother interpolation
+    init(maxSamples: Int = 10) {  // Small buffer, we only need current level
         self.maxSamples = maxSamples
         self.recentLevels = Array(repeating: 0.0, count: maxSamples)
     }

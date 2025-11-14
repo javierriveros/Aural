@@ -5,37 +5,44 @@ struct WaveformVisualizerView: View {
     let barCount: Int
     let isLocked: Bool
 
+    // Use a consistent seed per bar for variation
+    private let barSeeds: [Float]
+
     init(audioLevels: [Float], barCount: Int = 50, isLocked: Bool = false) {
         self.audioLevels = audioLevels
         self.barCount = barCount
         self.isLocked = isLocked
+
+        // Generate consistent variation factors for each bar (0.6 to 1.4)
+        self.barSeeds = (0..<barCount).map { i in
+            let normalized = Float(i) / Float(barCount)
+            // Create a wave pattern for variation
+            return 0.7 + sin(normalized * .pi * 4) * 0.3 + cos(normalized * .pi * 6) * 0.2
+        }
     }
 
     var body: some View {
         Canvas { context, size in
             let barWidth = size.width / CGFloat(barCount)
-            let barSpacing: CGFloat = 4  // Increased spacing for thinner bars
-            let effectiveBarWidth = max(barWidth - barSpacing, 2)  // Thinner bars
+            let barSpacing: CGFloat = 4
+            let effectiveBarWidth = max(barWidth - barSpacing, 2)
             let minBarHeight: CGFloat = 6
 
-            // Use darker colors - black/dark gray for better contrast
+            // Use darker colors for better contrast
             let baseColor: Color = isLocked ?
-                Color(red: 0.2, green: 0.2, blue: 0.2) :  // Dark gray for locked
-                Color(red: 0.15, green: 0.15, blue: 0.15)  // Almost black for unlocked
+                Color(red: 0.2, green: 0.2, blue: 0.2) :
+                Color(red: 0.15, green: 0.15, blue: 0.15)
+
+            // Get current audio level (use the most recent value)
+            let currentLevel = audioLevels.last ?? 0.0
 
             for i in 0..<barCount {
-                // Interpolate between samples for smoother visualization
-                let exactIndex = Float(i) * Float(audioLevels.count - 1) / Float(barCount - 1)
-                let lowerIndex = Int(floor(exactIndex))
-                let upperIndex = min(lowerIndex + 1, audioLevels.count - 1)
-                let fraction = exactIndex - Float(lowerIndex)
+                // Apply variation to current level for this bar
+                let barVariation = barSeeds[i]
+                let level = currentLevel * barVariation
 
-                let lowerLevel = audioLevels[lowerIndex]
-                let upperLevel = audioLevels[upperIndex]
-                let level = lowerLevel + (upperLevel - lowerLevel) * fraction
-
-                // Calculate bar height - Much taller! Use more of the available height
-                let maxHeight = size.height * 1.8  // Increased from 0.9 to 1.8 for much taller bars
+                // Calculate bar height
+                let maxHeight = size.height * 1.8
                 let barHeight = max(CGFloat(level) * maxHeight, minBarHeight)
 
                 // Calculate position (centered vertically)
@@ -53,12 +60,12 @@ struct WaveformVisualizerView: View {
                 let path = RoundedRectangle(cornerRadius: min(effectiveBarWidth / 2, 1.5))
                     .path(in: rect)
 
-                // Use solid dark color with high opacity for strong contrast
-                let opacity = 0.85 + (Double(level) * 0.15)  // Higher base opacity
+                // Use solid dark color with high opacity
+                let opacity = 0.85 + (Double(level) * 0.15)
                 context.fill(path, with: .color(baseColor.opacity(opacity)))
             }
         }
-        .drawingGroup()  // Enable Metal acceleration for smoother rendering
+        .drawingGroup()
     }
 }
 
