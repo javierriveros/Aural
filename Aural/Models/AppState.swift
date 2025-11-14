@@ -9,6 +9,8 @@ final class AppState {
     let whisperService = WhisperService()
     let soundPlayer = SoundPlayer.shared
     let floatingWidget = FloatingWidgetController()
+    let waveformWindow = WaveformWindowController()
+    let audioLevelMonitor = AudioLevelMonitor()
     let audioProcessor = AudioProcessor()
     let textInjectionService = TextInjectionService()
     let vocabularyService = VocabularyService()
@@ -30,11 +32,26 @@ final class AppState {
         RecordingModePreferences.mode
     }
 
-    var showFloatingWidget: Bool {
-        get { UserDefaults.standard.bool(forKey: UserDefaultsKeys.showFloatingWidget) }
+    var widgetDisplayMode: WidgetDisplayMode {
+        get {
+            if let rawValue = UserDefaults.standard.string(forKey: UserDefaultsKeys.widgetDisplayMode),
+               let mode = WidgetDisplayMode(rawValue: rawValue) {
+                return mode
+            }
+            return .waveform  // Default to waveform mode
+        }
         set {
-            UserDefaults.standard.set(newValue, forKey: UserDefaultsKeys.showFloatingWidget)
+            UserDefaults.standard.set(newValue.rawValue, forKey: UserDefaultsKeys.widgetDisplayMode)
             updateFloatingWidgetVisibility()
+        }
+    }
+
+    // Legacy support - maps to widgetDisplayMode
+    var showFloatingWidget: Bool {
+        get { widgetDisplayMode != .none }
+        set {
+            // When set to false, use .none, otherwise use current mode or default
+            widgetDisplayMode = newValue ? (widgetDisplayMode == .none ? .waveform : widgetDisplayMode) : .none
         }
     }
 
@@ -61,7 +78,9 @@ final class AppState {
         ])
         setupHotkeyCallbacks()
         setupFloatingWidgetCallbacks()
+        setupWaveformWindowCallbacks()
         setupShortcutCallbacks()
+        setupAudioLevelMonitor()
         if !hotkeyMonitor.startMonitoring() {
             print("Warning: Failed to start hotkey monitoring")
         }
@@ -72,6 +91,16 @@ final class AppState {
         floatingWidget.onTap = { [weak self] in
             self?.handleWidgetTap()
         }
+    }
+
+    private func setupWaveformWindowCallbacks() {
+        waveformWindow.onTap = { [weak self] in
+            self?.handleWidgetTap()
+        }
+    }
+
+    private func setupAudioLevelMonitor() {
+        audioRecorder.setLevelMonitor(audioLevelMonitor)
     }
 
     private func handleWidgetTap() {
@@ -169,7 +198,7 @@ final class AppState {
             stopRecording()
         } else if isRecording && !isRecordingLocked {
             isRecordingLocked = true
-            updateFloatingWidget()
+            updateRecordingVisualization()  // Update visualization with new locked state
         } else if !isRecording {
             startLockedRecording()
         }
@@ -179,6 +208,7 @@ final class AppState {
         guard !isRecording else { return }
 
         soundPlayer.playRecordingStart()
+        audioLevelMonitor.reset()
 
         Task { @MainActor in
             do {
@@ -186,7 +216,9 @@ final class AppState {
                 recordingURL = try await audioRecorder.startRecording()
                 isRecording = true
                 isRecordingLocked = false
+                updateFloatingWidgetVisibility()  // Ensure proper widget visibility
                 startWidgetUpdateTimer()
+                updateRecordingVisualization()
             } catch {
                 soundPlayer.playError()
                 print("Failed to start recording: \(error)")
@@ -199,6 +231,7 @@ final class AppState {
         guard !isRecording else { return }
 
         soundPlayer.playLockEngaged()
+        audioLevelMonitor.reset()
 
         Task { @MainActor in
             do {
@@ -206,7 +239,9 @@ final class AppState {
                 recordingURL = try await audioRecorder.startRecording()
                 isRecording = true
                 isRecordingLocked = true
+                updateFloatingWidgetVisibility()  // Ensure proper widget visibility
                 startWidgetUpdateTimer()
+                updateRecordingVisualization()
             } catch {
                 soundPlayer.playError()
                 print("Failed to start recording: \(error)")
@@ -225,6 +260,7 @@ final class AppState {
             if let url = audioRecorder.stopRecording() {
                 isRecording = false
                 isRecordingLocked = false
+                updateFloatingWidgetVisibility()  // Show simple widget again when idle
                 await handleRecordingComplete(url: url)
             }
         }
@@ -270,7 +306,12 @@ final class AppState {
                 ClipboardService.copy(transcriptionText)
             }
 
-            saveTranscription(text: transcriptionText, duration: duration)
+            // Calculate cost: $0.006 per minute
+            let costPerMinute = 0.006
+            let durationInMinutes = duration / 60.0
+            let cost = durationInMinutes * costPerMinute
+
+            saveTranscription(text: transcriptionText, duration: duration, cost: cost)
 
             FileManager.default.safelyRemoveItem(at: processedURL)
 
@@ -285,10 +326,10 @@ final class AppState {
         updateFloatingWidget()
     }
 
-    private func saveTranscription(text: String, duration: TimeInterval) {
+    private func saveTranscription(text: String, duration: TimeInterval, cost: Double) {
         guard let context = modelContext else { return }
 
-        let transcription = Transcription(text: text, duration: duration)
+        let transcription = Transcription(text: text, duration: duration, cost: cost)
         context.insert(transcription)
 
         do {
@@ -299,15 +340,36 @@ final class AppState {
     }
 
     private func updateFloatingWidgetVisibility() {
-        if showFloatingWidget {
+        switch widgetDisplayMode {
+        case .none:
+            // Hide both widgets
+            floatingWidget.hide()
+            waveformWindow.hide()
+        case .simple:
+            // Show simple widget, hide waveform window
             floatingWidget.show()
             updateFloatingWidget()
-        } else {
-            floatingWidget.hide()
+            waveformWindow.hide()
+        case .waveform:
+            // In waveform mode: only show waveform window when recording, nothing when idle
+            if isRecording {
+                floatingWidget.hide()
+                // Waveform window is shown/updated by updateRecordingVisualization()
+            } else {
+                // Hide both widgets when idle in waveform mode
+                floatingWidget.hide()
+                waveformWindow.hide()
+            }
         }
     }
 
     private func updateFloatingWidget() {
+        // Don't update simple widget when in waveform mode
+        // (in waveform mode, only the waveform window is shown during recording, nothing when idle)
+        if widgetDisplayMode == .waveform {
+            return
+        }
+
         let state: WidgetState
         if isTranscribing {
             state = .transcribing
@@ -320,11 +382,47 @@ final class AppState {
         floatingWidget.updateState(state)
     }
 
+    private func updateRecordingVisualization() {
+        switch widgetDisplayMode {
+        case .none:
+            // No visualization
+            break
+        case .simple:
+            // Update simple widget
+            updateFloatingWidget()
+        case .waveform:
+            // Show waveform window, hide simple widget
+            floatingWidget.hide()
+            let duration = audioRecorder.recordingDuration
+            waveformWindow.show(
+                duration: duration,
+                isLocked: isRecordingLocked,
+                levelMonitor: audioLevelMonitor
+            )
+        }
+    }
+
     private func startWidgetUpdateTimer() {
         stopWidgetUpdateTimer()
-        widgetUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-            self?.updateFloatingWidget()
+
+        // Use different update rates for waveform vs simple widget
+        // Waveform needs 60 FPS for smooth animation, simple widget only needs 10 FPS
+        let updateInterval: TimeInterval = (widgetDisplayMode == .waveform && isRecording) ? 1.0/60.0 : 0.1
+
+        // Create timer and add to run loop with common mode for better performance
+        let timer = Timer(timeInterval: updateInterval, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            if self.widgetDisplayMode == .waveform && self.isRecording {
+                // Update waveform window with latest audio levels at 60 FPS
+                self.updateRecordingVisualization()
+            } else {
+                // Update simple widget at 10 FPS (sufficient for duration counter)
+                self.updateFloatingWidget()
+            }
         }
+
+        RunLoop.current.add(timer, forMode: .common)
+        widgetUpdateTimer = timer
     }
 
     private func stopWidgetUpdateTimer() {

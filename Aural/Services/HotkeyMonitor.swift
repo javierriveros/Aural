@@ -3,7 +3,7 @@ import Carbon
 
 @Observable
 final class HotkeyMonitor {
-    enum MonitoringState {
+    enum MonitoringState: Equatable {
         case inactive
         case active
         case permissionDenied

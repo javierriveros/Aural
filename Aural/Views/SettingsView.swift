@@ -9,7 +9,7 @@ struct SettingsView: View {
     @State private var showSuccess = false
     @State private var recordingMode: RecordingMode = .hybrid
     @State private var soundsEnabled = true
-    @State private var showFloatingWidget = true
+    @State private var widgetDisplayMode: WidgetDisplayMode = .waveform
     @State private var audioSpeedMultiplier: Float = 1.0
     @State private var textInjectionEnabled = false
     @State private var hotkeyConfig = HotkeyConfiguration.default
@@ -82,11 +82,35 @@ struct SettingsView: View {
 
                     Toggle("Enable Sounds", isOn: $soundsEnabled)
                         .toggleStyle(.switch)
-
-                    Toggle("Show Floating Widget", isOn: $showFloatingWidget)
-                        .toggleStyle(.switch)
                 } header: {
                     Text("Recording")
+                        .font(.headline)
+                }
+
+                Section {
+                    Picker("Widget Display Style", selection: $widgetDisplayMode) {
+                        ForEach(WidgetDisplayMode.allCases) { mode in
+                            Text(mode.rawValue).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
+                    Text(widgetDisplayMode.description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    if widgetDisplayMode == .waveform {
+                        HStack(spacing: 4) {
+                            Image(systemName: "waveform")
+                                .foregroundStyle(BrandColors.primaryBlue)
+                            Text("Sound waves will be shown during recording")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.top, 4)
+                    }
+                } header: {
+                    Text("Widget Appearance")
                         .font(.headline)
                 }
 
@@ -303,7 +327,7 @@ struct SettingsView: View {
         apiKey = appState.whisperService.apiKey ?? ""
         recordingMode = RecordingModePreferences.mode
         soundsEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.soundsEnabled)
-        showFloatingWidget = appState.showFloatingWidget
+        widgetDisplayMode = appState.widgetDisplayMode
         audioSpeedMultiplier = appState.audioSpeedMultiplier
         textInjectionEnabled = appState.textInjectionEnabled
         hotkeyConfig = HotkeyRepository().load()
@@ -330,7 +354,7 @@ struct SettingsView: View {
         UserDefaults.standard.set(textInjectionEnabled, forKey: UserDefaultsKeys.textInjectionEnabled)
         UserDefaults.standard.set(voiceCommandsEnabled, forKey: UserDefaultsKeys.voiceCommandsEnabled)
 
-        appState.showFloatingWidget = showFloatingWidget
+        appState.widgetDisplayMode = widgetDisplayMode
         appState.audioSpeedMultiplier = audioSpeedMultiplier
         appState.textInjectionEnabled = textInjectionEnabled
         appState.hotkeyMonitor.updateHotkey(hotkeyConfig)
@@ -378,7 +402,7 @@ struct SettingsView: View {
             .appendingPathExtension("m4a")
 
         let audioRecorder = AudioRecorder()
-        try await audioRecorder.startRecording()
+        _ = try await audioRecorder.startRecording()
         try await Task.sleep(nanoseconds: 500_000_000)
 
         if let recordedURL = audioRecorder.stopRecording() {

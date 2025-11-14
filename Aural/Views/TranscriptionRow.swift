@@ -40,6 +40,14 @@ struct TranscriptionRow: View {
                         .padding(.vertical, 4)
                         .background(BrandColors.primaryCyan.opacity(0.1))
                         .cornerRadius(CornerRadius.sm)
+
+                    Text(formatCost(transcription.cost))
+                        .font(Typography.monoCaption)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, Spacing.xs)
+                        .padding(.vertical, 4)
+                        .background(BrandColors.success.opacity(0.1))
+                        .cornerRadius(CornerRadius.sm)
                 }
             }
 
@@ -137,7 +145,6 @@ struct TranscriptionRow: View {
             x: 0,
             y: isHovered ? 6 : 2
         )
-        .scaleEffect(isHovered ? 1.01 : 1.0)
         .onHover { hovering in
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                 isHovered = hovering
@@ -153,5 +160,14 @@ struct TranscriptionRow: View {
     private func wordCount(_ text: String) -> Int {
         let words = text.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }
         return words.count
+    }
+
+    private func formatCost(_ cost: Double) -> String {
+        // Always show actual cost, even if very small
+        // Use 4 decimal places for precise tracking of small costs
+        if cost < 0.01 {
+            return String(format: "$%.4f", cost)
+        }
+        return String(format: "$%.3f", cost)
     }
 }
