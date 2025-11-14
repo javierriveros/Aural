@@ -7,17 +7,26 @@ struct WaveformVisualizerView: View {
 
     // Use a consistent seed per bar for variation
     private let barSeeds: [Float]
+    // Phase offsets for staggered animation
+    private let phaseOffsets: [Float]
+
+    @State private var previousBarHeights: [CGFloat] = []
 
     init(audioLevels: [Float], barCount: Int = 50, isLocked: Bool = false) {
         self.audioLevels = audioLevels
         self.barCount = barCount
         self.isLocked = isLocked
 
-        // Generate consistent variation factors for each bar (0.6 to 1.4)
+        // Generate consistent variation factors for each bar (0.5 to 1.5)
         self.barSeeds = (0..<barCount).map { i in
             let normalized = Float(i) / Float(barCount)
-            // Create a wave pattern for variation
-            return 0.7 + sin(normalized * .pi * 4) * 0.3 + cos(normalized * .pi * 6) * 0.2
+            // Create a wave pattern for variation with more dynamic range
+            return 0.6 + sin(normalized * .pi * 3) * 0.4 + cos(normalized * .pi * 5) * 0.3
+        }
+
+        // Generate phase offsets for smoother, more organic animation
+        self.phaseOffsets = (0..<barCount).map { i in
+            Float(i) * 0.05  // Small offset per bar
         }
     }
 
@@ -33,17 +42,30 @@ struct WaveformVisualizerView: View {
                 Color(red: 0.2, green: 0.2, blue: 0.2) :
                 Color(red: 0.15, green: 0.15, blue: 0.15)
 
-            // Get current audio level (use the most recent value)
-            let currentLevel = audioLevels.last ?? 0.0
+            // Calculate average of recent levels for smoother response
+            let recentLevels = audioLevels.suffix(5)  // Last 5 samples
+            let currentLevel = recentLevels.isEmpty ? 0.0 : recentLevels.reduce(0.0, +) / Float(recentLevels.count)
+
+            // Initialize previous heights if needed
+            if previousBarHeights.isEmpty {
+                previousBarHeights = Array(repeating: minBarHeight, count: barCount)
+            }
 
             for i in 0..<barCount {
                 // Apply variation to current level for this bar
                 let barVariation = barSeeds[i]
-                let level = currentLevel * barVariation
+                let targetLevel = currentLevel * barVariation
 
-                // Calculate bar height
+                // Calculate target bar height
                 let maxHeight = size.height * 1.8
-                let barHeight = max(CGFloat(level) * maxHeight, minBarHeight)
+                let targetHeight = max(CGFloat(targetLevel) * maxHeight, minBarHeight)
+
+                // Smooth transition from previous height to target height
+                let smoothingFactor: CGFloat = 0.3  // Higher = slower, smoother
+                let smoothedHeight = previousBarHeights[i] * smoothingFactor + targetHeight * (1.0 - smoothingFactor)
+                previousBarHeights[i] = smoothedHeight
+
+                let barHeight = smoothedHeight
 
                 // Calculate position (centered vertically)
                 let x = CGFloat(i) * barWidth + barSpacing / 2
@@ -61,7 +83,7 @@ struct WaveformVisualizerView: View {
                     .path(in: rect)
 
                 // Use solid dark color with high opacity
-                let opacity = 0.85 + (Double(level) * 0.15)
+                let opacity = 0.85 + (Double(targetLevel) * 0.15)
                 context.fill(path, with: .color(baseColor.opacity(opacity)))
             }
         }

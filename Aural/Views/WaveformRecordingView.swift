@@ -87,11 +87,8 @@ struct WaveformRecordingView: View {
     }
 
     private var instructionText: String {
-        if isLocked {
-            return "Tap to stop"
-        } else {
-            return "Release to stop"
-        }
+        // Always show "Tap to stop" since tapping the window stops recording in all modes
+        return "Tap to stop"
     }
 
     private func formatDuration(_ duration: TimeInterval) -> String {
