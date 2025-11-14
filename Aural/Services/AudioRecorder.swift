@@ -43,6 +43,7 @@ final class AudioRecorder {
     private var audioEngine: AVAudioEngine?
     private var audioFile: AVAudioFile?
     private var recordingURL: URL?
+    private weak var levelMonitor: AudioLevelMonitor?
 
     private(set) var state: RecordingState = .idle
     private(set) var recordingDuration: TimeInterval = 0
@@ -51,6 +52,10 @@ final class AudioRecorder {
     private let maxWriteErrors = 10
 
     init() {}
+
+    func setLevelMonitor(_ monitor: AudioLevelMonitor) {
+        self.levelMonitor = monitor
+    }
 
     func requestPermission() async -> Bool {
         await withCheckedContinuation { continuation in
@@ -101,6 +106,9 @@ final class AudioRecorder {
                     }
                 }
             }
+
+            // Process audio levels for visualization
+            self.levelMonitor?.processBuffer(buffer)
         }
 
         do {

@@ -9,6 +9,8 @@ final class AppState {
     let whisperService = WhisperService()
     let soundPlayer = SoundPlayer.shared
     let floatingWidget = FloatingWidgetController()
+    let waveformWindow = WaveformWindowController()
+    let audioLevelMonitor = AudioLevelMonitor()
     let audioProcessor = AudioProcessor()
     let textInjectionService = TextInjectionService()
     let vocabularyService = VocabularyService()
@@ -30,11 +32,26 @@ final class AppState {
         RecordingModePreferences.mode
     }
 
-    var showFloatingWidget: Bool {
-        get { UserDefaults.standard.bool(forKey: UserDefaultsKeys.showFloatingWidget) }
+    var widgetDisplayMode: WidgetDisplayMode {
+        get {
+            if let rawValue = UserDefaults.standard.string(forKey: UserDefaultsKeys.widgetDisplayMode),
+               let mode = WidgetDisplayMode(rawValue: rawValue) {
+                return mode
+            }
+            return .waveform  // Default to waveform mode
+        }
         set {
-            UserDefaults.standard.set(newValue, forKey: UserDefaultsKeys.showFloatingWidget)
+            UserDefaults.standard.set(newValue.rawValue, forKey: UserDefaultsKeys.widgetDisplayMode)
             updateFloatingWidgetVisibility()
+        }
+    }
+
+    // Legacy support - maps to widgetDisplayMode
+    var showFloatingWidget: Bool {
+        get { widgetDisplayMode != .none }
+        set {
+            // When set to false, use .none, otherwise use current mode or default
+            widgetDisplayMode = newValue ? (widgetDisplayMode == .none ? .waveform : widgetDisplayMode) : .none
         }
     }
 
@@ -61,7 +78,9 @@ final class AppState {
         ])
         setupHotkeyCallbacks()
         setupFloatingWidgetCallbacks()
+        setupWaveformWindowCallbacks()
         setupShortcutCallbacks()
+        setupAudioLevelMonitor()
         if !hotkeyMonitor.startMonitoring() {
             print("Warning: Failed to start hotkey monitoring")
         }
@@ -72,6 +91,16 @@ final class AppState {
         floatingWidget.onTap = { [weak self] in
             self?.handleWidgetTap()
         }
+    }
+
+    private func setupWaveformWindowCallbacks() {
+        waveformWindow.onTap = { [weak self] in
+            self?.handleWidgetTap()
+        }
+    }
+
+    private func setupAudioLevelMonitor() {
+        audioRecorder.setLevelMonitor(audioLevelMonitor)
     }
 
     private func handleWidgetTap() {
@@ -179,6 +208,7 @@ final class AppState {
         guard !isRecording else { return }
 
         soundPlayer.playRecordingStart()
+        audioLevelMonitor.reset()
 
         Task { @MainActor in
             do {
@@ -187,6 +217,7 @@ final class AppState {
                 isRecording = true
                 isRecordingLocked = false
                 startWidgetUpdateTimer()
+                updateRecordingVisualization()
             } catch {
                 soundPlayer.playError()
                 print("Failed to start recording: \(error)")
@@ -199,6 +230,7 @@ final class AppState {
         guard !isRecording else { return }
 
         soundPlayer.playLockEngaged()
+        audioLevelMonitor.reset()
 
         Task { @MainActor in
             do {
@@ -207,6 +239,7 @@ final class AppState {
                 isRecording = true
                 isRecordingLocked = true
                 startWidgetUpdateTimer()
+                updateRecordingVisualization()
             } catch {
                 soundPlayer.playError()
                 print("Failed to start recording: \(error)")
@@ -220,6 +253,11 @@ final class AppState {
 
         soundPlayer.playRecordingStop()
         stopWidgetUpdateTimer()
+
+        // Hide waveform window if in waveform mode
+        if widgetDisplayMode == .waveform {
+            waveformWindow.hide()
+        }
 
         Task { @MainActor in
             if let url = audioRecorder.stopRecording() {
@@ -299,11 +337,26 @@ final class AppState {
     }
 
     private func updateFloatingWidgetVisibility() {
-        if showFloatingWidget {
+        switch widgetDisplayMode {
+        case .none:
+            // Hide both widgets
+            floatingWidget.hide()
+            waveformWindow.hide()
+        case .simple:
+            // Show simple widget, hide waveform window
             floatingWidget.show()
             updateFloatingWidget()
-        } else {
-            floatingWidget.hide()
+            waveformWindow.hide()
+        case .waveform:
+            // Show simple widget when idle, waveform window when recording
+            if isRecording {
+                floatingWidget.hide()
+                // Waveform window is shown/updated by updateRecordingVisualization()
+            } else {
+                floatingWidget.show()
+                updateFloatingWidget()
+                waveformWindow.hide()
+            }
         }
     }
 
@@ -320,10 +373,37 @@ final class AppState {
         floatingWidget.updateState(state)
     }
 
+    private func updateRecordingVisualization() {
+        switch widgetDisplayMode {
+        case .none:
+            // No visualization
+            break
+        case .simple:
+            // Update simple widget
+            updateFloatingWidget()
+        case .waveform:
+            // Show waveform window, hide simple widget
+            floatingWidget.hide()
+            let duration = audioRecorder.recordingDuration
+            waveformWindow.show(
+                duration: duration,
+                isLocked: isRecordingLocked,
+                levelMonitor: audioLevelMonitor
+            )
+        }
+    }
+
     private func startWidgetUpdateTimer() {
         stopWidgetUpdateTimer()
         widgetUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-            self?.updateFloatingWidget()
+            guard let self = self else { return }
+            if self.widgetDisplayMode == .waveform && self.isRecording {
+                // Update waveform window with latest audio levels
+                self.updateRecordingVisualization()
+            } else {
+                // Update simple widget
+                self.updateFloatingWidget()
+            }
         }
     }
 

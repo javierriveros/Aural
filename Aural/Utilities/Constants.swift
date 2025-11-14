@@ -7,6 +7,7 @@ import Foundation
 enum UserDefaultsKeys {
     static let openAIAPIKey = "openai_api_key"
     static let showFloatingWidget = "show_floating_widget"
+    static let widgetDisplayMode = "widget_display_mode"
     static let audioSpeedMultiplier = "audio_speed_multiplier"
     static let textInjectionEnabled = "text_injection_enabled"
     static let soundsEnabled = "sounds_enabled"
