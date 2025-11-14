@@ -12,6 +12,19 @@ import SwiftUI
 struct AuralApp: App {
     @State private var appState = AppState()
 
+    var sharedModelContainer: ModelContainer = {
+        let schema = Schema([
+            Transcription.self,
+        ])
+        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+
+        do {
+            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+        } catch {
+            fatalError("Could not create ModelContainer: \(error)")
+        }
+    }()
+
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -19,7 +32,7 @@ struct AuralApp: App {
                 .frame(minWidth: 500, idealWidth: 550, maxWidth: 650,
                        minHeight: 400, idealHeight: 600, maxHeight: 800)
         }
-        .modelContainer(for: Transcription.self)
+        .modelContainer(sharedModelContainer)
         .windowResizability(.contentSize)
         .defaultSize(width: 550, height: 600)
     }
