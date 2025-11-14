@@ -12,7 +12,7 @@ struct WaveformVisualizerView: View {
 
     @State private var previousBarHeights: [CGFloat]
 
-    init(audioLevels: [Float], barCount: Int = 50, isLocked: Bool = false) {
+    init(audioLevels: [Float], barCount: Int = 80, isLocked: Bool = false) {
         self.audioLevels = audioLevels
         self.barCount = barCount
         self.isLocked = isLocked
@@ -30,15 +30,15 @@ struct WaveformVisualizerView: View {
         }
 
         // Initialize previous bar heights
-        _previousBarHeights = State(initialValue: Array(repeating: 6.0, count: barCount))
+        _previousBarHeights = State(initialValue: Array(repeating: 8.0, count: barCount))
     }
 
     var body: some View {
         Canvas { context, size in
             let barWidth = size.width / CGFloat(barCount)
-            let barSpacing: CGFloat = 4
-            let effectiveBarWidth = max(barWidth - barSpacing, 2)
-            let minBarHeight: CGFloat = 6
+            let barSpacing: CGFloat = 3  // Slightly reduced spacing for more bars
+            let effectiveBarWidth = max(barWidth - barSpacing, 1.5)  // Thinner bars
+            let minBarHeight: CGFloat = 8
 
             // Use darker colors for better contrast
             let baseColor: Color = isLocked ?
@@ -54,8 +54,8 @@ struct WaveformVisualizerView: View {
                 let barVariation = barSeeds[i]
                 let targetLevel = currentLevel * barVariation
 
-                // Calculate target bar height
-                let maxHeight = size.height * 1.8
+                // Calculate target bar height - Much taller!
+                let maxHeight = size.height * 2.5  // Increased from 1.8 to 2.5 for much taller bars
                 let targetHeight = max(CGFloat(targetLevel) * maxHeight, minBarHeight)
 
                 // Smooth transition from previous height to target height
@@ -77,7 +77,7 @@ struct WaveformVisualizerView: View {
                     height: barHeight
                 )
 
-                let path = RoundedRectangle(cornerRadius: min(effectiveBarWidth / 2, 1.5))
+                let path = RoundedRectangle(cornerRadius: min(effectiveBarWidth / 2, 1.0))
                     .path(in: rect)
 
                 // Use solid dark color with high opacity

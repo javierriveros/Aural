@@ -28,7 +28,7 @@ final class WaveformWindowController {
 
         // Create panel with larger size for waveform display (includes padding for shadow)
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 548, height: 288),
+            contentRect: NSRect(x: 0, y: 0, width: 548, height: 308),
             styleMask: [.nonactivatingPanel, .fullSizeContentView],
             backing: .buffered,
             defer: false

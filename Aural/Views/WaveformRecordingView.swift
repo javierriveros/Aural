@@ -13,10 +13,10 @@ struct WaveformRecordingView: View {
             // Waveform visualizer with more height
             WaveformVisualizerView(
                 audioLevels: audioLevels,
-                barCount: 50,
+                barCount: 80,  // More bars for thinner appearance
                 isLocked: isLocked
             )
-            .frame(height: 120)  // Increased height for taller bars
+            .frame(height: 140)  // Increased height for taller bars
             .padding(.horizontal, Spacing.lg)
 
             // Recording info
@@ -87,8 +87,13 @@ struct WaveformRecordingView: View {
     }
 
     private var instructionText: String {
-        // Always show "Tap to stop" since tapping the window stops recording in all modes
-        return "Tap to stop"
+        if isLocked {
+            // In locked mode: user needs to press the shortcut again to stop
+            return "Press shortcut to stop"
+        } else {
+            // In unlocked mode: user is holding the key and needs to release it
+            return "Release shortcut to stop"
+        }
     }
 
     private func formatDuration(_ duration: TimeInterval) -> String {
