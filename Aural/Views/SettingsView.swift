@@ -402,7 +402,7 @@ struct SettingsView: View {
             .appendingPathExtension("m4a")
 
         let audioRecorder = AudioRecorder()
-        try await audioRecorder.startRecording()
+        _ = try await audioRecorder.startRecording()
         try await Task.sleep(nanoseconds: 500_000_000)
 
         if let recordedURL = audioRecorder.stopRecording() {

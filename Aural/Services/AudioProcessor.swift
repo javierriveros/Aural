@@ -37,68 +37,53 @@ final class AudioProcessor {
             .appendingPathExtension("m4a")
 
         do {
-            return try await withCheckedThrowingContinuation { continuation in
-                DispatchQueue.global(qos: .userInitiated).async {
-                    do {
-                        let asset = AVURLAsset(url: url)
+            let asset = AVURLAsset(url: url)
 
-                        guard let assetTrack = asset.tracks(withMediaType: .audio).first else {
-                            continuation.resume(throwing: ProcessingError.invalidAudioFile)
-                            return
-                        }
+            // Use modern async API to load tracks
+            let audioTracks = try await asset.loadTracks(withMediaType: .audio)
+            guard let assetTrack = audioTracks.first else {
+                throw ProcessingError.invalidAudioFile
+            }
 
-                        let composition = AVMutableComposition()
-                        guard let compositionTrack = composition.addMutableTrack(
-                            withMediaType: .audio,
-                            preferredTrackID: kCMPersistentTrackID_Invalid
-                        ) else {
-                            continuation.resume(throwing: ProcessingError.processingFailed(NSError(domain: "AudioProcessor", code: -1)))
-                            return
-                        }
+            let composition = AVMutableComposition()
+            guard let compositionTrack = composition.addMutableTrack(
+                withMediaType: .audio,
+                preferredTrackID: kCMPersistentTrackID_Invalid
+            ) else {
+                throw ProcessingError.processingFailed(NSError(domain: "AudioProcessor", code: -1))
+            }
 
-                        try compositionTrack.insertTimeRange(
-                            CMTimeRange(start: .zero, duration: asset.duration),
-                            of: assetTrack,
-                            at: .zero
-                        )
+            // Use modern async API to load duration
+            let duration = try await asset.load(.duration)
 
-                        compositionTrack.scaleTimeRange(
-                            CMTimeRange(start: .zero, duration: asset.duration),
-                            toDuration: CMTimeMultiplyByFloat64(asset.duration, multiplier: Float64(1.0 / speedMultiplier))
-                        )
+            try compositionTrack.insertTimeRange(
+                CMTimeRange(start: .zero, duration: duration),
+                of: assetTrack,
+                at: .zero
+            )
 
-                        guard let exportSession = AVAssetExportSession(
-                            asset: composition,
-                            presetName: AVAssetExportPresetAppleM4A
-                        ) else {
-                            continuation.resume(throwing: ProcessingError.processingFailed(NSError(domain: "AudioProcessor", code: -2)))
-                            return
-                        }
+            compositionTrack.scaleTimeRange(
+                CMTimeRange(start: .zero, duration: duration),
+                toDuration: CMTimeMultiplyByFloat64(duration, multiplier: Float64(1.0 / speedMultiplier))
+            )
 
-                        exportSession.outputURL = outputURL
-                        exportSession.outputFileType = .m4a
+            guard let exportSession = AVAssetExportSession(
+                asset: composition,
+                presetName: AVAssetExportPresetAppleM4A
+            ) else {
+                throw ProcessingError.processingFailed(NSError(domain: "AudioProcessor", code: -2))
+            }
 
-                        exportSession.exportAsynchronously {
-                            switch exportSession.status {
-                            case .completed:
-                                continuation.resume(returning: outputURL)
-                            case .failed, .cancelled:
-                                try? FileManager.default.removeItem(at: outputURL)
+            exportSession.outputURL = outputURL
+            exportSession.outputFileType = .m4a
 
-                                if let error = exportSession.error {
-                                    continuation.resume(throwing: ProcessingError.processingFailed(error))
-                                } else {
-                                    continuation.resume(throwing: ProcessingError.processingFailed(NSError(domain: "AudioProcessor", code: -3)))
-                                }
-                            default:
-                                try? FileManager.default.removeItem(at: outputURL)
-                                continuation.resume(throwing: ProcessingError.processingFailed(NSError(domain: "AudioProcessor", code: -5)))
-                            }
-                        }
-                    } catch {
-                        continuation.resume(throwing: ProcessingError.processingFailed(error))
-                    }
-                }
+            // Use modern async export API
+            do {
+                try await exportSession.export(to: outputURL, as: .m4a)
+                return outputURL
+            } catch {
+                try? FileManager.default.removeItem(at: outputURL)
+                throw ProcessingError.processingFailed(error)
             }
         } catch {
             try? FileManager.default.removeItem(at: outputURL)
