@@ -3,11 +3,33 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppState.self) private var appState
+    
+    // MARK: - Transcription Settings
+    @State private var apiKey: String = ""
     @State private var groqAPIKey: String = ""
     @State private var transcriptionMode: TranscriptionMode = .cloud
     @State private var selectedCloudProvider: CloudProvider = .openai
     @State private var selectedModelId: String?
     @State private var showModelManager = false
+    
+    // MARK: - API Testing
+    @State private var isTestingAPI = false
+    @State private var testResult: String?
+    @State private var showSuccess = false
+    
+    // MARK: - Recording Settings
+    @State private var recordingMode: RecordingMode = .holdOnly
+    @State private var soundsEnabled = true
+    @State private var widgetDisplayMode: WidgetDisplayMode = .waveform
+    @State private var audioSpeedMultiplier: Float = 1.0
+    @State private var textInjectionEnabled = false
+    
+    // MARK: - Hotkey & Vocabulary
+    @State private var hotkeyConfig = HotkeyConfiguration.default
+    @State private var customVocabulary = CustomVocabulary()
+    @State private var showVocabularyManager = false
+    
+    // MARK: - Voice Commands & Shortcuts
     @State private var voiceCommandsEnabled = false
     @State private var keyboardShortcuts = KeyboardShortcutsConfiguration.default
 
@@ -347,6 +369,12 @@ struct SettingsView: View {
         .sheet(isPresented: $showModelManager) {
             ModelManagerView()
         }
+        .onChange(of: showModelManager) { _, isShowing in
+            // Sync model selection when sheet closes
+            if !isShowing {
+                selectedModelId = appState.selectedModelId
+            }
+        }
         .sheet(isPresented: $showVocabularyManager) {
             VStack {
                 VocabularyManagementView(vocabulary: $customVocabulary)
@@ -387,8 +415,8 @@ struct SettingsView: View {
     private func migrateAPIKeyFromUserDefaults() {
         if let oldKey = UserDefaults.standard.string(forKey: UserDefaultsKeys.openAIAPIKey),
            !oldKey.isEmpty,
-           appState.whisperService.apiKey == nil {
-            try? appState.whisperService.setAPIKey(oldKey)
+           appState.openAIService.apiKey == nil {
+            try? appState.openAIService.setAPIKey(oldKey)
             UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.openAIAPIKey)
         }
     }
@@ -476,4 +504,5 @@ struct SettingsView: View {
 
 #Preview {
     SettingsView()
+        .environment(AppState())
 }

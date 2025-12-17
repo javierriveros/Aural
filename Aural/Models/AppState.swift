@@ -7,10 +7,23 @@ final class AppState {
     let audioRecorder = AudioRecorder()
     let shortcutManager = ShortcutManager()
     let modelDownloadManager = ModelDownloadManager()
+
+    // Services
+    let soundPlayer = SoundPlayer.shared
+    let audioLevelMonitor = AudioLevelMonitor()
+    let audioProcessor = AudioProcessor()
+    let hotkeyMonitor = HotkeyMonitor()
+    let voiceCommandProcessor = VoiceCommandProcessor()
+    let textInjectionService = TextInjectionService()
+    let vocabularyService = VocabularyService()
+
+    // UI Controllers
+    private let floatingWidget = FloatingWidgetController()
+    private let waveformWindow = WaveformWindowController()
     
-    // Providers
-    private let openAIService = OpenAIService()
-    private let groqService = GroqService()
+    // Providers - exposed for settings UI access
+    private(set) var openAIService = OpenAIService()
+    private(set) var groqService = GroqService()
     private var localWhisperService: LocalWhisperService?
     private var localParakeetService: LocalParakeetService?
 
@@ -333,8 +346,10 @@ final class AppState {
 
             // Calculate cost using provider-specific logic
             let cost = calculateCost(duration: duration)
+            let providerType = transcriptionMode.rawValue.lowercased()
+            let providerName = getProviderName()
             
-            saveTranscription(text: transcriptionText, duration: duration, cost: cost, providerType: pType, providerName: pName)
+            saveTranscription(text: transcriptionText, duration: duration, cost: cost, providerType: providerType, providerName: providerName)
 
             FileManager.default.safelyRemoveItem(at: processedURL)
 

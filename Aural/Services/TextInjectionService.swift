@@ -160,18 +160,20 @@ final class TextInjectionService {
         var focusedApp: CFTypeRef?
 
         let appError = AXUIElementCopyAttributeValue(systemWide, kAXFocusedApplicationAttribute as CFString, &focusedApp)
-        guard appError == .success, let appElement = focusedApp as? AXUIElement else {
+        guard appError == .success, let appElement = focusedApp else {
             return nil
         }
+        
+        let axApp = appElement as! AXUIElement
 
         var focusedElement: CFTypeRef?
-        let elementError = AXUIElementCopyAttributeValue(appElement, kAXFocusedUIElementAttribute as CFString, &focusedElement)
+        let elementError = AXUIElementCopyAttributeValue(axApp, kAXFocusedUIElementAttribute as CFString, &focusedElement)
 
         guard elementError == .success, let element = focusedElement else {
             return nil
         }
 
-        return element as? AXUIElement
+        return (element as! AXUIElement)
     }
 
     func canInjectText() -> Bool {

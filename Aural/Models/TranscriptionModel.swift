@@ -1,3 +1,6 @@
+import Foundation
+
+/// Mode of transcription: cloud-based API or local on-device model
 enum TranscriptionMode: String, Codable, CaseIterable {
     case cloud = "Cloud"
     case local = "Local"
