@@ -25,6 +25,16 @@ struct TranscriptionRow: View {
                 Spacer()
 
                 HStack(spacing: Spacing.xs) {
+                    if let providerName = transcription.providerName {
+                        Text(providerName)
+                            .font(Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, Spacing.xs)
+                            .padding(.vertical, 4)
+                            .background(Color.secondary.opacity(0.1))
+                            .cornerRadius(CornerRadius.sm)
+                    }
+
                     Text(formatDuration(transcription.duration))
                         .font(Typography.monoCaption)
                         .foregroundStyle(.secondary)

@@ -3,18 +3,11 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppState.self) private var appState
-    @State private var apiKey: String = ""
-    @State private var isTestingAPI = false
-    @State private var testResult: String?
-    @State private var showSuccess = false
-    @State private var recordingMode: RecordingMode = .hybrid
-    @State private var soundsEnabled = true
-    @State private var widgetDisplayMode: WidgetDisplayMode = .waveform
-    @State private var audioSpeedMultiplier: Float = 1.0
-    @State private var textInjectionEnabled = false
-    @State private var hotkeyConfig = HotkeyConfiguration.default
-    @State private var customVocabulary = CustomVocabulary()
-    @State private var showVocabularyManager = false
+    @State private var groqAPIKey: String = ""
+    @State private var transcriptionMode: TranscriptionMode = .cloud
+    @State private var selectedCloudProvider: CloudProvider = .openai
+    @State private var selectedModelId: String? = nil
+    @State private var showModelManager = false
     @State private var voiceCommandsEnabled = false
     @State private var keyboardShortcuts = KeyboardShortcutsConfiguration.default
 
@@ -43,28 +36,76 @@ struct SettingsView: View {
 
             Form {
                 Section {
-                    SecureField("OpenAI API Key", text: $apiKey)
-                        .textFieldStyle(.roundedBorder)
-
-                    HStack {
-                        Button("Test API Key") {
-                            testAPIKey()
-                        }
-                        .disabled(apiKey.isEmpty || isTestingAPI)
-
-                        if isTestingAPI {
-                            ProgressView()
-                                .scaleEffect(0.7)
+                    Picker("Mode", selection: $transcriptionMode) {
+                        ForEach(TranscriptionMode.allCases, id: \.self) { mode in
+                            Text(mode.rawValue).tag(mode)
                         }
                     }
-
-                    if let result = testResult {
-                        Text(result)
-                            .font(Typography.caption)
-                            .foregroundStyle(showSuccess ? BrandColors.success : BrandColors.error)
+                    .pickerStyle(.segmented)
+                    
+                    if transcriptionMode == .cloud {
+                        Picker("Provider", selection: $selectedCloudProvider) {
+                            ForEach(CloudProvider.allCases) { provider in
+                                Text(provider.rawValue).tag(provider)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        
+                        if selectedCloudProvider == .openai {
+                            SecureField("OpenAI API Key", text: $apiKey)
+                                .textFieldStyle(.roundedBorder)
+                        } else {
+                            SecureField("Groq API Key", text: $groqAPIKey)
+                                .textFieldStyle(.roundedBorder)
+                        }
+                        
+                        HStack {
+                            Button("Test API Connection") {
+                                testAPIKey()
+                            }
+                            .disabled((selectedCloudProvider == .openai ? apiKey.isEmpty : groqAPIKey.isEmpty) || isTestingAPI)
+                            
+                            if isTestingAPI {
+                                ProgressView()
+                                    .scaleEffect(0.7)
+                            }
+                        }
+                        
+                        if let result = testResult {
+                            Text(result)
+                                .font(Typography.caption)
+                                .foregroundStyle(showSuccess ? BrandColors.success : BrandColors.error)
+                        }
+                        
+                        Text(selectedCloudProvider.description)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        // Local mode
+                        HStack {
+                            if let modelId = selectedModelId, let model = ModelRegistry.model(forId: modelId) {
+                                Text("Model: \(model.name)")
+                                    .font(.body)
+                            } else {
+                                Text("No model selected")
+                                    .font(.body)
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            Spacer()
+                            
+                            Button("Manage Models") {
+                                showModelManager = true
+                            }
+                            .buttonStyle(.bordered)
+                        }
+                        
+                        Text("On-device transcription. Free and private.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 } header: {
-                    Text("OpenAI Configuration")
+                    Text("Transcription")
                         .font(.headline)
                 }
 
@@ -295,14 +336,16 @@ struct SettingsView: View {
                 }
                 .buttonStyle(PrimaryButtonStyle())
                 .keyboardShortcut(.defaultAction)
-                .disabled(apiKey.isEmpty)
             }
             .padding(Spacing.lg)
             .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
         }
-        .frame(width: 600, height: 850)
+        .frame(width: 600, height: 900)
         .onAppear {
             loadSettings()
+        }
+        .sheet(isPresented: $showModelManager) {
+            ModelManagerView()
         }
         .sheet(isPresented: $showVocabularyManager) {
             VStack {
@@ -324,7 +367,12 @@ struct SettingsView: View {
     private func loadSettings() {
         migrateAPIKeyFromUserDefaults()
 
-        apiKey = appState.whisperService.apiKey ?? ""
+        apiKey = appState.openAIService.apiKey ?? ""
+        groqAPIKey = appState.groqService.apiKey ?? ""
+        transcriptionMode = appState.transcriptionMode
+        selectedCloudProvider = appState.selectedCloudProvider
+        selectedModelId = appState.selectedModelId
+        
         recordingMode = RecordingModePreferences.mode
         soundsEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.soundsEnabled)
         widgetDisplayMode = appState.widgetDisplayMode
@@ -346,7 +394,12 @@ struct SettingsView: View {
     }
 
     private func saveSettings() {
-        try? appState.whisperService.setAPIKey(apiKey)
+        try? appState.openAIService.setAPIKey(apiKey)
+        try? appState.groqService.setAPIKey(groqAPIKey)
+        
+        appState.transcriptionMode = transcriptionMode
+        appState.selectedCloudProvider = selectedCloudProvider
+        appState.selectedModelId = selectedModelId
 
         RecordingModePreferences.mode = recordingMode
         UserDefaults.standard.set(soundsEnabled, forKey: UserDefaultsKeys.soundsEnabled)
@@ -373,11 +426,18 @@ struct SettingsView: View {
 
         Task {
             do {
-                try appState.whisperService.setAPIKey(apiKey)
+                let provider: TranscriptionProvider
+                if selectedCloudProvider == .openai {
+                    try appState.openAIService.setAPIKey(apiKey)
+                    provider = appState.openAIService
+                } else {
+                    try appState.groqService.setAPIKey(groqAPIKey)
+                    provider = appState.groqService
+                }
 
                 let testAudioURL = try await createTestAudioFile()
 
-                _ = try await appState.whisperService.transcribe(audioURL: testAudioURL)
+                _ = try await provider.transcribe(audioURL: testAudioURL)
 
                 try? FileManager.default.removeItem(at: testAudioURL)
 
