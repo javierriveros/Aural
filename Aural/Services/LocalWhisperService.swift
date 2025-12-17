@@ -1,11 +1,13 @@
 import Foundation
-import SwiftWhisper
+
+// Note: SwiftWhisper integration requires adding the package to the Xcode project:
+// https://github.com/exPHAT/SwiftWhisper.git
+//
+// Until SwiftWhisper is added, this service will throw an error indicating setup is required.
 
 final class LocalWhisperService: TranscriptionProvider {
     private let modelDownloadManager: ModelDownloadManager
     private let audioConverter = AudioFormatConverter()
-    private var whisper: Whisper?
-    private var currentModelId: String?
     
     init(modelDownloadManager: ModelDownloadManager) {
         self.modelDownloadManager = modelDownloadManager
@@ -13,48 +15,55 @@ final class LocalWhisperService: TranscriptionProvider {
     
     var isAvailable: Bool {
         guard let selectedId = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedModelId),
-              let model = ModelRegistry.model(forId: selectedId) else {
+              let model = ModelRegistry.model(forId: selectedId),
+              model.family == .whisper else {
             return false
         }
-        return modelDownloadManager.isModelDownloaded(model)
+        
+        // Check if model is downloaded
+        guard modelDownloadManager.isModelDownloaded(model) else {
+            return false
+        }
+        
+        // SwiftWhisper package is not yet integrated
+        // Return false until the dependency is properly set up
+        #if canImport(SwiftWhisper)
+        return true
+        #else
+        return false
+        #endif
     }
     
     func transcribe(audioURL: URL) async throws -> String {
         guard let selectedId = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedModelId),
               let model = ModelRegistry.model(forId: selectedId) else {
-            throw NSError(domain: "LocalWhisper", code: -1, userInfo: [NSLocalizedDescriptionKey: "No local model selected"])
+            throw LocalModelError.noModelSelected
         }
         
         let modelPath = modelDownloadManager.downloadPath(for: model)
         guard FileManager.default.fileExists(atPath: modelPath.path) else {
-            throw NSError(domain: "LocalWhisper", code: -2, userInfo: [NSLocalizedDescriptionKey: "Model not downloaded"])
+            throw LocalModelError.modelNotDownloaded
         }
         
-        // Load model if needed
-        if whisper == nil || currentModelId != selectedId {
-            whisper = Whisper(modelURL: modelPath)
-            currentModelId = selectedId
-        }
+        // SwiftWhisper integration
+        // To enable local Whisper transcription:
+        // 1. Add SwiftWhisper package to Xcode: https://github.com/exPHAT/SwiftWhisper.git
+        // 2. Import SwiftWhisper at the top of this file
+        // 3. Implement the transcription logic below
         
-        guard let whisper = whisper else {
-            throw NSError(domain: "LocalWhisper", code: -3, userInfo: [NSLocalizedDescriptionKey: "Failed to initialize Whisper"])
-        }
-        
-        // Convert audio to 16kHz PCM WAV
+        #if canImport(SwiftWhisper)
+        // Convert audio to 16kHz PCM WAV (required by Whisper)
         let pcmURL = try await audioConverter.convertToPCM(url: audioURL)
         defer { try? FileManager.default.removeItem(at: pcmURL) }
         
-        // Transcribe
-        return try await withCheckedThrowingContinuation { continuation in
-            whisper.transcribe(audioURL: pcmURL) { result in
-                switch result {
-                case .success(let segments):
-                    let text = segments.map { $0.text }.joined(separator: " ")
-                    continuation.resume(returning: text.trimmingCharacters(in: .whitespacesAndNewlines))
-                case .failure(let error):
-                    continuation.resume(throwing: error)
-                }
-            }
-        }
+        // TODO: Implement when SwiftWhisper is added
+        // let whisper = Whisper(modelURL: modelPath)
+        // let segments = try await whisper.transcribe(audioURL: pcmURL)
+        // return segments.map { $0.text }.joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        throw LocalModelError.notImplemented
+        #else
+        throw LocalModelError.notImplemented
+        #endif
     }
 }

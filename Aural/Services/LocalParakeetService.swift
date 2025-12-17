@@ -11,46 +11,29 @@ final class LocalParakeetService: TranscriptionProvider {
     }
     
     var isAvailable: Bool {
+        // Parakeet CoreML integration is not yet complete
+        // Return false to prevent selection of Parakeet models
         guard let selectedId = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedModelId),
               let model = ModelRegistry.model(forId: selectedId),
               model.family == .parakeet else {
             return false
         }
-        return modelDownloadManager.isModelDownloaded(model)
+        
+        // Currently disabled until CoreML inference is implemented
+        return false
     }
     
     func transcribe(audioURL: URL) async throws -> String {
-        guard let selectedId = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedModelId),
-              let model = ModelRegistry.model(forId: selectedId),
-              model.family == .parakeet else {
-            throw NSError(domain: "LocalParakeet", code: -1, userInfo: [NSLocalizedDescriptionKey: "No Parakeet model selected"])
-        }
+        // Parakeet CoreML integration requires:
+        // 1. Loading compiled CoreML model (.mlmodelc) from the download path
+        // 2. Extracting Mel Spectrogram features from PCM audio using Accelerate
+        // 3. Running inference using MLModel
+        // 4. Decoding output tokens using Greedy or Beam Search
+        //
+        // This is a complex implementation that requires additional dependencies
+        // and native Swift ML processing. For now, we throw an error indicating
+        // the feature is not yet available.
         
-        let modelPath = modelDownloadManager.downloadPath(for: model)
-        guard FileManager.default.fileExists(atPath: modelPath.path) else {
-            throw NSError(domain: "LocalParakeet", code: -2, userInfo: [NSLocalizedDescriptionKey: "Model not downloaded"])
-        }
-        
-        // Convert audio to 16kHz PCM for parity (Parakeet also expects 16kHz)
-        let pcmURL = try await audioConverter.convertToPCM(url: audioURL)
-        defer { try? FileManager.default.removeItem(at: pcmURL) }
-        
-        // This is a simplified placeholder for Parakeet CoreML inference logic
-        // In a real implementation, we would:
-        // 1. Load the compiled CoreML model (.mlmodelc) from the download path
-        // 2. Extract features (Mel Spectrogram) from the PCM audio
-        // 3. Run inference using MLModel
-        // 4. Decode the output tokens (Greedy or Beam Search)
-        
-        return try await runCoreMLInference(modelURL: modelPath, audioURL: pcmURL)
-    }
-    
-    private func runCoreMLInference(modelURL: URL, audioURL: URL) async throws -> String {
-        // Placeholder for CoreML logic
-        // Parakeet models typically require feature extraction (using Accelerate or custom logic)
-        // and then passing the spectrogram to the model.
-        
-        // For now, we return a message indicating integrated CoreML setup
-        return "[Local Parakeet Transcription Placeholder]"
+        throw LocalModelError.notImplemented
     }
 }

@@ -1,36 +1,11 @@
 import Foundation
 
 final class GroqService: TranscriptionProvider {
-    enum TranscriptionError: LocalizedError {
-        case noAPIKey
-        case invalidURL
-        case networkError(Error)
-        case invalidResponse
-        case apiError(String)
-
-        var errorDescription: String? {
-            switch self {
-            case .noAPIKey:
-                return "Groq API key not configured"
-            case .invalidURL:
-                return "Invalid audio file URL"
-            case .networkError(let error):
-                return "Network error: \(error.localizedDescription)"
-            case .invalidResponse:
-                return "Invalid response from Groq API"
-            case .apiError(let message):
-                return "API error: \(message)"
-            }
-        }
-    }
-
     private let apiURL = CloudProvider.groq.apiEndpoint
     private let apiKeyIdentifier = "groq_api_key"
 
     var apiKey: String? {
-        get {
-            UserDefaults.standard.string(forKey: apiKeyIdentifier)
-        }
+        UserDefaults.standard.string(forKey: apiKeyIdentifier)
     }
 
     var isAvailable: Bool {
@@ -48,31 +23,34 @@ final class GroqService: TranscriptionProvider {
 
     func transcribe(audioURL: URL) async throws -> String {
         guard let apiKey = apiKey, !apiKey.isEmpty else {
-            throw TranscriptionError.noAPIKey
+            throw CloudTranscriptionError.noAPIKey
         }
 
         guard FileManager.default.fileExists(atPath: audioURL.path) else {
-            throw TranscriptionError.invalidURL
+            throw CloudTranscriptionError.invalidURL
         }
 
         var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
 
-        let boundary = UUID().uuidString
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-
-        let httpBody = try createMultipartBody(
-            audioURL: audioURL,
-            boundary: boundary
-        )
-        request.httpBody = httpBody
+        let audioData = try Data(contentsOf: audioURL)
+        let mimeType = MultipartFormDataBuilder.mimeType(for: audioURL)
+        
+        var builder = MultipartFormDataBuilder()
+        builder.addFile(name: "file", filename: audioURL.lastPathComponent, mimeType: mimeType, data: audioData)
+        builder.addField(name: "model", value: CloudProvider.groq.defaultModel)
+        builder.addField(name: "response_format", value: "json")
+        builder.finalize()
+        
+        request.setValue(builder.contentTypeHeader, forHTTPHeaderField: "Content-Type")
+        request.httpBody = builder.data
 
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse else {
-                throw TranscriptionError.invalidResponse
+                throw CloudTranscriptionError.invalidResponse
             }
 
             if httpResponse.statusCode == 200 {
@@ -81,45 +59,12 @@ final class GroqService: TranscriptionProvider {
                 return whisperResponse.text
             } else {
                 let errorMessage = String(data: data, encoding: .utf8) ?? "Unknown error"
-                throw TranscriptionError.apiError(errorMessage)
+                throw CloudTranscriptionError.apiError(errorMessage)
             }
-        } catch let error as TranscriptionError {
+        } catch let error as CloudTranscriptionError {
             throw error
         } catch {
-            throw TranscriptionError.networkError(error)
-        }
-    }
-
-    private func createMultipartBody(audioURL: URL, boundary: String) throws -> Data {
-        var body = Data()
-        let lineBreak = "\r\n"
-
-        body.append("--\(boundary)\(lineBreak)")
-        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(audioURL.lastPathComponent)\"\(lineBreak)")
-        body.append("Content-Type: audio/m4a\(lineBreak)\(lineBreak)")
-
-        let audioData = try Data(contentsOf: audioURL)
-        body.append(audioData)
-        body.append(lineBreak)
-
-        body.append("--\(boundary)\(lineBreak)")
-        body.append("Content-Disposition: form-data; name=\"model\"\(lineBreak)\(lineBreak)")
-        body.append(CloudProvider.groq.defaultModel + lineBreak)
-
-        body.append("--\(boundary)\(lineBreak)")
-        body.append("Content-Disposition: form-data; name=\"response_format\"\(lineBreak)\(lineBreak)")
-        body.append("json\(lineBreak)")
-
-        body.append("--\(boundary)--\(lineBreak)")
-
-        return body
-    }
-}
-
-private extension Data {
-    mutating func append(_ string: String) {
-        if let data = string.data(using: .utf8) {
-            append(data)
+            throw CloudTranscriptionError.networkError(error)
         }
     }
 }
