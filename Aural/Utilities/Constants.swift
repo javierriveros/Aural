@@ -50,8 +50,11 @@ enum TimerConstants {
 
 enum APIConstants {
     static let whisperAPIURL = "https://api.openai.com/v1/audio/transcriptions"
+    static let groqAPIURL = "https://api.groq.com/openai/v1/audio/transcriptions"
     static let whisperModel = "whisper-1"
+    static let groqModel = "whisper-large-v3-turbo"
     static let whisperPricePerMinute = 0.006
+    static let groqPricePerMinute = 0.0 // Free for now
 }
 
 // MARK: - Local Model Constants

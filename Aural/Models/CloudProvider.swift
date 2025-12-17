@@ -9,9 +9,9 @@ enum CloudProvider: String, Codable, CaseIterable, Identifiable {
     var apiEndpoint: URL {
         switch self {
         case .openai:
-            return URL(string: "https://api.openai.com/v1/audio/transcriptions")!
+            return URL(string: APIConstants.whisperAPIURL)!
         case .groq:
-            return URL(string: "https://api.groq.com/openai/v1/audio/transcriptions")!
+            return URL(string: APIConstants.groqAPIURL)!
         }
     }
     
@@ -31,7 +31,7 @@ enum CloudProvider: String, Codable, CaseIterable, Identifiable {
     var priceInfo: String {
         switch self {
         case .openai:
-            return "$0.006 / min"
+            return "$\(APIConstants.whisperPricePerMinute) / min"
         case .groq:
             return "Free (Rate Limited)"
         }
@@ -40,9 +40,9 @@ enum CloudProvider: String, Codable, CaseIterable, Identifiable {
     var defaultModel: String {
         switch self {
         case .openai:
-            return "whisper-1"
+            return APIConstants.whisperModel
         case .groq:
-            return "whisper-large-v3-turbo"
+            return APIConstants.groqModel
         }
     }
 }
