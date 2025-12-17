@@ -1,6 +1,6 @@
-import Foundation
-import CoreML
 import AVFoundation
+import CoreML
+import Foundation
 
 final class LocalParakeetService: TranscriptionProvider {
     private let modelDownloadManager: ModelDownloadManager

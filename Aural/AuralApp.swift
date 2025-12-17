@@ -14,7 +14,7 @@ struct AuralApp: App {
 
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Transcription.self,
+            Transcription.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

@@ -32,7 +32,7 @@ final class ModelDownloadManager {
     func downloadModel(_ model: TranscriptionModel) {
         guard downloadTasks[model.id] == nil else { return }
         
-        let task = session.downloadTask(with: model.downloadURL) { [weak self] location, response, error in
+        let task = session.downloadTask(with: model.downloadURL) { [weak self] location, _, error in
             guard let self = self else { return }
             
             if let error = error {

@@ -1,5 +1,5 @@
-import XCTest
 @testable import Aural
+import XCTest
 
 final class CloudProviderTests: XCTestCase {
     func testOpenAIEndpoints() {

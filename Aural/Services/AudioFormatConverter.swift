@@ -31,10 +31,12 @@ final class AudioFormatConverter {
             .appendingPathExtension("wav")
         
         // Define target format: 16kHz, 1-channel (mono), 16-bit PCM
-        let targetFormat = AVAudioFormat(commonFormat: .pcmFormatInt16,
-                                        sampleRate: LocalModelConstants.whisperSampleRate,
-                                        channels: 1,
-                                        interleaved: false)!
+        let targetFormat = AVAudioFormat(
+            commonFormat: .pcmFormatInt16,
+            sampleRate: LocalModelConstants.whisperSampleRate,
+            channels: 1,
+            interleaved: false
+        )!
         
         // Use AVAudioFile and AVAudioEngine/AVAudioConverter for high quality resampling
         // Simplified approach using AVAssetReader/Writer for format conversion

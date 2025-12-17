@@ -6,7 +6,7 @@ struct SettingsView: View {
     @State private var groqAPIKey: String = ""
     @State private var transcriptionMode: TranscriptionMode = .cloud
     @State private var selectedCloudProvider: CloudProvider = .openai
-    @State private var selectedModelId: String? = nil
+    @State private var selectedModelId: String?
     @State private var showModelManager = false
     @State private var voiceCommandsEnabled = false
     @State private var keyboardShortcuts = KeyboardShortcutsConfiguration.default
