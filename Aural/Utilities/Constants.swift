@@ -16,6 +16,10 @@ enum UserDefaultsKeys {
     static let customHotkey = "custom_hotkey"
     static let customVocabulary = "custom_vocabulary"
     static let voiceCommandsEnabled = "voice_commands_enabled"
+    static let transcriptionMode = "transcription_mode"
+    static let selectedModelId = "selected_model_id"
+    static let selectedCloudProvider = "selected_cloud_provider"
+    static let downloadedModels = "downloaded_models"
 }
 
 // MARK: - Audio Settings
@@ -48,6 +52,13 @@ enum APIConstants {
     static let whisperAPIURL = "https://api.openai.com/v1/audio/transcriptions"
     static let whisperModel = "whisper-1"
     static let whisperPricePerMinute = 0.006
+}
+
+// MARK: - Local Model Constants
+
+enum LocalModelConstants {
+    static let modelsDirectory = "Models"
+    static let whisperSampleRate: Double = 16000.0
 }
 
 // MARK: - UI Constants
