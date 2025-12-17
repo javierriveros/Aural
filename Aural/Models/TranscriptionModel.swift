@@ -1,4 +1,7 @@
-import Foundation
+enum TranscriptionMode: String, Codable, CaseIterable {
+    case cloud = "Cloud"
+    case local = "Local"
+}
 
 enum ModelFamily: String, Codable, CaseIterable {
     case whisper = "Whisper"
