@@ -164,6 +164,7 @@ final class TextInjectionService {
             return nil
         }
         
+        // swiftlint:disable:next force_cast
         let axApp = appElement as! AXUIElement
 
         var focusedElement: CFTypeRef?
@@ -173,6 +174,7 @@ final class TextInjectionService {
             return nil
         }
 
+        // swiftlint:disable:next force_cast
         return (element as! AXUIElement)
     }
 

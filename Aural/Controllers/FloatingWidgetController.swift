@@ -69,9 +69,9 @@ final class FloatingWidgetController {
         let screenFrame = screen.visibleFrame
         let panelSize = panel.frame.size
 
-        let x = screenFrame.maxX - panelSize.width - 20
-        let y = screenFrame.maxY - panelSize.height - 20
+        let xPos = screenFrame.maxX - panelSize.width - 20
+        let yPos = screenFrame.maxY - panelSize.height - 20
 
-        panel.setFrameOrigin(NSPoint(x: x, y: y))
+        panel.setFrameOrigin(NSPoint(x: xPos, y: yPos))
     }
 }

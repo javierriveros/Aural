@@ -2,9 +2,9 @@ import Foundation
 
 class MockURLSessionDownloadTask: URLSessionDownloadTask {
     private let resumeAction: () -> Void
-    var _state: URLSessionTask.State = .suspended
+    var internalState: URLSessionTask.State = .suspended
     
-    override var state: URLSessionTask.State { _state }
+    override var state: URLSessionTask.State { internalState }
     
     init(resumeAction: @escaping () -> Void) {
         self.resumeAction = resumeAction
@@ -12,12 +12,12 @@ class MockURLSessionDownloadTask: URLSessionDownloadTask {
     }
     
     override func resume() {
-        _state = .running
+        internalState = .running
         resumeAction()
     }
     
     override func cancel() {
-        _state = .canceling
+        internalState = .canceling
     }
 }
 
