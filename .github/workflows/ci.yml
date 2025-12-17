@@ -23,7 +23,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      # Use the default Xcode version for macos-14 (currently Xcode 15.x/16.x)
+      - name: Set up Xcode 16
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.0'
+
       - name: Show Xcode Version
         run: xcodebuild -version
 
@@ -52,6 +56,11 @@ jobs:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
+      
+      - name: Set up Xcode 16
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.0'
       
       - name: Build Release
         run: |
