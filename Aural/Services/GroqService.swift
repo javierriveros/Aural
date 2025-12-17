@@ -1,6 +1,6 @@
 import Foundation
 
-final class WhisperService {
+final class GroqService: TranscriptionProvider {
     enum TranscriptionError: LocalizedError {
         case noAPIKey
         case invalidURL
@@ -11,26 +11,31 @@ final class WhisperService {
         var errorDescription: String? {
             switch self {
             case .noAPIKey:
-                return "OpenAI API key not configured"
+                return "Groq API key not configured"
             case .invalidURL:
                 return "Invalid audio file URL"
             case .networkError(let error):
                 return "Network error: \(error.localizedDescription)"
             case .invalidResponse:
-                return "Invalid response from Whisper API"
+                return "Invalid response from Groq API"
             case .apiError(let message):
                 return "API error: \(message)"
             }
         }
     }
 
-    private let apiURL = URL(string: "https://api.openai.com/v1/audio/transcriptions")!
-    private let apiKeyIdentifier = "openai_api_key"
+    private let apiURL = CloudProvider.groq.apiEndpoint
+    private let apiKeyIdentifier = "groq_api_key"
 
     var apiKey: String? {
         get {
             UserDefaults.standard.string(forKey: apiKeyIdentifier)
         }
+    }
+
+    var isAvailable: Bool {
+        guard let key = apiKey, !key.isEmpty else { return false }
+        return true
     }
 
     func setAPIKey(_ key: String) throws {
@@ -99,7 +104,7 @@ final class WhisperService {
 
         body.append("--\(boundary)\(lineBreak)")
         body.append("Content-Disposition: form-data; name=\"model\"\(lineBreak)\(lineBreak)")
-        body.append("whisper-1\(lineBreak)")
+        body.append(CloudProvider.groq.defaultModel + lineBreak)
 
         body.append("--\(boundary)\(lineBreak)")
         body.append("Content-Disposition: form-data; name=\"response_format\"\(lineBreak)\(lineBreak)")

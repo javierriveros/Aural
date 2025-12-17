@@ -6,7 +6,7 @@ import SwiftData
 final class AppState {
     let audioRecorder = AudioRecorder()
     let hotkeyMonitor = HotkeyMonitor()
-    let whisperService = WhisperService()
+    let whisperService = OpenAIService()
     let soundPlayer = SoundPlayer.shared
     let floatingWidget = FloatingWidgetController()
     let waveformWindow = WaveformWindowController()
