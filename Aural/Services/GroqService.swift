@@ -2,7 +2,7 @@ import Foundation
 
 final class GroqService: TranscriptionProvider {
     private let apiURL = CloudProvider.groq.apiEndpoint
-    private let apiKeyIdentifier = "groq_api_key"
+    private let apiKeyIdentifier = UserDefaultsKeys.groqAPIKey
 
     var apiKey: String? {
         UserDefaults.standard.string(forKey: apiKeyIdentifier)

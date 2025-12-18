@@ -22,12 +22,10 @@ final class LocalWhisperService: TranscriptionProvider {
             return false
         }
         
-        // Check if model is downloaded
         guard modelDownloadManager.isModelDownloaded(model) else {
             return false
         }
         
-        // Return true if SwiftWhisper package is available
         #if canImport(SwiftWhisper)
         return true
         #else

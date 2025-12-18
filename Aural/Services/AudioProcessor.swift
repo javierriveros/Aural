@@ -1,23 +1,29 @@
 import AVFoundation
 import Foundation
 
-final class AudioProcessor {
-    enum ProcessingError: LocalizedError {
-        case fileNotFound
-        case invalidAudioFile
-        case processingFailed(Error)
+enum ProcessingError: LocalizedError {
+    case fileNotFound
+    case invalidAudioFile
+    case processingFailed(Error)
 
-        var errorDescription: String? {
-            switch self {
-            case .fileNotFound:
-                return "Audio file not found"
-            case .invalidAudioFile:
-                return "Invalid audio file format"
-            case .processingFailed(let error):
-                return "Audio processing failed: \(error.localizedDescription)"
-            }
+    var errorDescription: String? {
+        switch self {
+        case .fileNotFound:
+            return "Audio file not found"
+        case .invalidAudioFile:
+            return "Invalid audio file format"
+        case .processingFailed(let error):
+            return "Audio processing failed: \(error.localizedDescription)"
         }
     }
+}
+
+protocol AudioProcessorProtocol: AnyObject {
+    func speedUpAudio(url: URL, speedMultiplier: Float) async throws -> URL
+    func estimateCostSavings(duration: TimeInterval, speedMultiplier: Float) -> Double
+}
+
+final class AudioProcessor: AudioProcessorProtocol {
 
     func speedUpAudio(url: URL, speedMultiplier: Float) async throws -> URL {
         guard FileManager.default.fileExists(atPath: url.path) else {
@@ -39,7 +45,6 @@ final class AudioProcessor {
         do {
             let asset = AVURLAsset(url: url)
 
-            // Use modern async API to load tracks
             let audioTracks = try await asset.loadTracks(withMediaType: .audio)
             guard let assetTrack = audioTracks.first else {
                 throw ProcessingError.invalidAudioFile
@@ -53,7 +58,6 @@ final class AudioProcessor {
                 throw ProcessingError.processingFailed(NSError(domain: "AudioProcessor", code: -1))
             }
 
-            // Use modern async API to load duration
             let duration = try await asset.load(.duration)
 
             try compositionTrack.insertTimeRange(
@@ -77,7 +81,6 @@ final class AudioProcessor {
             exportSession.outputURL = outputURL
             exportSession.outputFileType = .m4a
 
-            // Use modern async export API
             do {
                 try await exportSession.export(to: outputURL, as: .m4a)
                 return outputURL

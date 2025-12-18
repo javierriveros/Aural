@@ -1,44 +1,55 @@
 import AVFoundation
 import Foundation
 
+enum RecordingState: Equatable {
+    case idle
+    case recording
+    case failed(Error)
+
+    static func == (lhs: RecordingState, rhs: RecordingState) -> Bool {
+        switch (lhs, rhs) {
+        case (.idle, .idle), (.recording, .recording):
+            return true
+        case (.failed, .failed):
+            return true
+        default:
+            return false
+        }
+    }
+}
+
+enum RecordingError: LocalizedError {
+    case permissionDenied
+    case recordingFailed
+    case audioEngineFailure
+    case audioWriteFailure(Error)
+
+    var errorDescription: String? {
+        switch self {
+        case .permissionDenied:
+            return "Microphone permission denied"
+        case .recordingFailed:
+            return "Failed to start recording"
+        case .audioEngineFailure:
+            return "Audio engine initialization failed"
+        case .audioWriteFailure(let error):
+            return "Failed to write audio data: \(error.localizedDescription)"
+        }
+    }
+}
+
+protocol AudioRecorderProtocol: AnyObject {
+    var state: RecordingState { get }
+    var recordingDuration: TimeInterval { get }
+    
+    func setLevelMonitor(_ monitor: AudioLevelMonitor)
+    func requestPermission() async -> Bool
+    func startRecording() async throws -> URL
+    func stopRecording() -> URL?
+}
+
 @Observable
-final class AudioRecorder {
-    enum RecordingState: Equatable {
-        case idle
-        case recording
-        case failed(Error)
-
-        static func == (lhs: RecordingState, rhs: RecordingState) -> Bool {
-            switch (lhs, rhs) {
-            case (.idle, .idle), (.recording, .recording):
-                return true
-            case (.failed, .failed):
-                return true
-            default:
-                return false
-            }
-        }
-    }
-
-    enum RecordingError: LocalizedError {
-        case permissionDenied
-        case recordingFailed
-        case audioEngineFailure
-        case audioWriteFailure(Error)
-
-        var errorDescription: String? {
-            switch self {
-            case .permissionDenied:
-                return "Microphone permission denied"
-            case .recordingFailed:
-                return "Failed to start recording"
-            case .audioEngineFailure:
-                return "Audio engine initialization failed"
-            case .audioWriteFailure(let error):
-                return "Failed to write audio data: \(error.localizedDescription)"
-            }
-        }
-    }
+final class AudioRecorder: AudioRecorderProtocol {
 
     private var audioEngine: AVAudioEngine?
     private var audioFile: AVAudioFile?
@@ -107,7 +118,6 @@ final class AudioRecorder {
                 }
             }
 
-            // Process audio levels for visualization
             self.levelMonitor?.processBuffer(buffer)
         }
 

@@ -7,7 +7,6 @@ final class LocalParakeetService: TranscriptionProvider {
     private var asrManager: AsrManager?
     private var models: AsrModels?
     
-    // Track initialization state
     private var isInitializing = false
     private var initializationError: Error?
     
@@ -38,7 +37,6 @@ final class LocalParakeetService: TranscriptionProvider {
             // downloadAndLoad handles lazy loading and caching internally
             self.models = try await AsrModels.downloadAndLoad(version: selectedId == "parakeet-tdt-v3" ? .v3 : .v2)
             
-            // Use type inference for configuration as per SDK examples
             let manager = AsrManager(config: .default)
             try await manager.initialize(models: self.models!)
             
@@ -67,7 +65,6 @@ final class LocalParakeetService: TranscriptionProvider {
         
         try file.read(into: buffer)
         
-        // Transcribe
         let result = try await manager.transcribe(buffer)
         return result.text
     }

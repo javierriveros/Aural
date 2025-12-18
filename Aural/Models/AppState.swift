@@ -4,20 +4,18 @@ import SwiftData
 
 @Observable
 final class AppState {
-    let audioRecorder = AudioRecorder()
+    let audioRecorder: AudioRecorderProtocol
     let shortcutManager = ShortcutManager()
     let modelDownloadManager = ModelDownloadManager()
 
-    // Services
     let soundPlayer = SoundPlayer.shared
     let audioLevelMonitor = AudioLevelMonitor()
-    let audioProcessor = AudioProcessor()
+    let audioProcessor: AudioProcessorProtocol
     let hotkeyMonitor = HotkeyMonitor()
     let voiceCommandProcessor = VoiceCommandProcessor()
     let textInjectionService = TextInjectionService()
     let vocabularyService = VocabularyService()
 
-    // UI Controllers
     private let floatingWidget = FloatingWidgetController()
     private let waveformWindow = WaveformWindowController()
     private(set) var openAIService = OpenAIService()
@@ -97,7 +95,15 @@ final class AppState {
         }
     }
 
-    init() {
+
+
+    init(
+        audioRecorder: AudioRecorderProtocol = AudioRecorder(),
+        audioProcessor: AudioProcessorProtocol = AudioProcessor()
+    ) {
+        self.audioRecorder = audioRecorder
+        self.audioProcessor = audioProcessor
+
         // Load initial values from UserDefaults
         let modeRaw = UserDefaults.standard.string(forKey: UserDefaultsKeys.transcriptionMode) ?? ""
         self.transcriptionMode = TranscriptionMode(rawValue: modeRaw) ?? .cloud
@@ -239,7 +245,7 @@ final class AppState {
             stopRecording()
         } else if isRecording && !isRecordingLocked {
             isRecordingLocked = true
-            updateRecordingVisualization()  // Update visualization with new locked state
+            updateRecordingVisualization()
         } else if !isRecording {
             startLockedRecording()
         }
@@ -278,7 +284,7 @@ final class AppState {
                 recordingURL = try await audioRecorder.startRecording()
                 isRecording = true
                 isRecordingLocked = true
-                updateFloatingWidgetVisibility()  // Ensure proper widget visibility
+                updateFloatingWidgetVisibility()
                 startWidgetUpdateTimer()
                 updateRecordingVisualization()
             } catch {
@@ -299,7 +305,7 @@ final class AppState {
             if let url = audioRecorder.stopRecording() {
                 isRecording = false
                 isRecordingLocked = false
-                updateFloatingWidgetVisibility()  // Show simple widget again when idle
+                updateFloatingWidgetVisibility()
                 await handleRecordingComplete(url: url)
             }
         }

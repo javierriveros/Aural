@@ -35,7 +35,6 @@ final class AudioFormatConverter {
     func convertToPCM(url: URL) async throws -> URL {
         let asset = AVURLAsset(url: url)
         
-        // Load audio tracks
         let tracks = try await asset.loadTracks(withMediaType: .audio)
         guard tracks.first != nil else {
             throw ConverterError.noAudioTrack
@@ -76,7 +75,6 @@ final class AudioFormatConverter {
             AVLinearPCMIsNonInterleaved: false
         ]
         
-        // Configure reader to output uncompressed PCM
         let readerSettings: [String: Any] = [
             AVFormatIDKey: kAudioFormatLinearPCM,
             AVLinearPCMIsFloatKey: false,
@@ -92,12 +90,10 @@ final class AudioFormatConverter {
         let writerInput = AVAssetWriterInput(mediaType: .audio, outputSettings: outputSettings)
         writer.add(writerInput)
         
-        // Start reader and check for errors
         guard reader.startReading() else {
             throw ConverterError.readerStartFailed
         }
         
-        // Start writer and check for errors
         guard writer.startWriting() else {
             throw ConverterError.writerStartFailed
         }
@@ -109,7 +105,6 @@ final class AudioFormatConverter {
             
             writerInput.requestMediaDataWhenReady(on: queue) {
                 while writerInput.isReadyForMoreMediaData {
-                    // Check reader status
                     if reader.status == .failed {
                         writerInput.markAsFinished()
                         writer.cancelWriting()
@@ -119,14 +114,12 @@ final class AudioFormatConverter {
                     
                     if let buffer = readerOutput.copyNextSampleBuffer() {
                         if !writerInput.append(buffer) {
-                            // Handle append failure
                             writerInput.markAsFinished()
                             writer.cancelWriting()
                             continuation.resume(throwing: ConverterError.exportFailed(writer.error ?? NSError(domain: "AudioConverter", code: -1)))
                             return
                         }
                     } else {
-                        // No more samples, finish writing
                         writerInput.markAsFinished()
                         writer.finishWriting {
                             if writer.status == .completed {
