@@ -66,7 +66,8 @@ struct ModelRegistry {
             downloadURL: URL(string: "https://huggingface.co/fluid-inference/parakeet-tdt-0.6b-v2-coreml/resolve/main/parakeet-tdt-0.6b-v2.mlmodelc.zip")!,
             languages: ["en"],
             description: "State-of-the-art accuracy and ultra-fast (English).",
-            coreMLIdentifier: "parakeet_tdt_0.6b_v2"
+            coreMLIdentifier: "parakeet_tdt_0.6b_v2",
+            managedBySDK: true
         ),
         TranscriptionModel(
             id: "parakeet-tdt-v3",
@@ -77,7 +78,8 @@ struct ModelRegistry {
             downloadURL: URL(string: "https://huggingface.co/fluid-inference/parakeet-tdt-v3-coreml/resolve/main/parakeet-tdt-v3.mlmodelc.zip")!,
             languages: ["en", "es", "fr", "de", "it", "nl", "pt"],
             description: "Latest multilingual Parakeet model.",
-            coreMLIdentifier: "parakeet_tdt_v3"
+            coreMLIdentifier: "parakeet_tdt_v3",
+            managedBySDK: true
         )
     ]
     

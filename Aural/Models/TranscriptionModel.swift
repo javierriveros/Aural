@@ -24,4 +24,7 @@ struct TranscriptionModel: Identifiable, Codable, Hashable {
     
     // CoreML model identifier if applicable
     var coreMLIdentifier: String?
+    
+    // Whether the model is managed by an external SDK (e.g. FluidAudio)
+    var managedBySDK: Bool = false
 }

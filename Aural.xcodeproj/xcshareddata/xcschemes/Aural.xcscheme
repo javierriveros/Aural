@@ -21,6 +21,20 @@
                ReferencedContainer = "container:Aural.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "C817133C2EF39FFE00831434"
+               BuildableName = "AuralTests.xctest"
+               BlueprintName = "AuralTests"
+               ReferencedContainer = "container:Aural.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction

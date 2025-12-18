@@ -37,8 +37,9 @@ jobs:
       - name: Run Tests
         run: |
           xcodebuild test \
+            -project Aural.xcodeproj \
             -scheme Aural \
-            -destination 'platform=macOS' \
+            -destination 'platform=macOS,arch=arm64' \
             -enableCodeCoverage YES \
             -resultBundlePath TestResults.xcresult \
             CODE_SIGN_IDENTITY="" \
