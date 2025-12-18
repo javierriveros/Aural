@@ -18,15 +18,15 @@ struct WaveformVisualizerView: View {
         self.isLocked = isLocked
 
         // Generate consistent variation factors for each bar (0.5 to 1.5)
-        self.barSeeds = (0..<barCount).map { i in
-            let normalized = Float(i) / Float(barCount)
+        self.barSeeds = (0..<barCount).map { index in
+            let normalized = Float(index) / Float(barCount)
             // Create a wave pattern for variation with more dynamic range
             return 0.6 + sin(normalized * .pi * 3) * 0.4 + cos(normalized * .pi * 5) * 0.3
         }
 
         // Generate phase offsets for smoother, more organic animation
-        self.phaseOffsets = (0..<barCount).map { i in
-            Float(i) * 0.05  // Small offset per bar
+        self.phaseOffsets = (0..<barCount).map { index in
+            Float(index) * 0.05  // Small offset per bar
         }
 
         // Initialize previous bar heights
@@ -49,9 +49,9 @@ struct WaveformVisualizerView: View {
             let recentLevels = audioLevels.suffix(5)  // Last 5 samples
             let currentLevel = recentLevels.isEmpty ? 0.0 : recentLevels.reduce(0.0, +) / Float(recentLevels.count)
 
-            for i in 0..<barCount {
+            for barIndex in 0..<barCount {
                 // Apply variation to current level for this bar
-                let barVariation = barSeeds[i]
+                let barVariation = barSeeds[barIndex]
                 let targetLevel = currentLevel * barVariation
 
                 // Calculate target bar height - Much taller!
@@ -60,19 +60,19 @@ struct WaveformVisualizerView: View {
 
                 // Smooth transition from previous height to target height
                 let smoothingFactor: CGFloat = 0.3  // Higher = slower, smoother
-                let smoothedHeight = previousBarHeights[i] * smoothingFactor + targetHeight * (1.0 - smoothingFactor)
-                previousBarHeights[i] = smoothedHeight
+                let smoothedHeight = previousBarHeights[barIndex] * smoothingFactor + targetHeight * (1.0 - smoothingFactor)
+                previousBarHeights[barIndex] = smoothedHeight
 
                 let barHeight = smoothedHeight
 
                 // Calculate position (centered vertically)
-                let x = CGFloat(i) * barWidth + barSpacing / 2
-                let y = (size.height - barHeight) / 2
+                let xPos = CGFloat(barIndex) * barWidth + barSpacing / 2
+                let yPos = (size.height - barHeight) / 2
 
                 // Create rounded rectangle for bar
                 let rect = CGRect(
-                    x: x,
-                    y: y,
+                    x: xPos,
+                    y: yPos,
                     width: effectiveBarWidth,
                     height: barHeight
                 )
@@ -89,13 +89,12 @@ struct WaveformVisualizerView: View {
     }
 }
 
-
 #Preview("Active Recording") {
     VStack(spacing: 20) {
         // Simulate active recording with varying levels
         WaveformVisualizerView(
-            audioLevels: (0..<60).map { i in
-                Float(sin(Double(i) * 0.3) * 0.5 + 0.5)
+            audioLevels: (0..<60).map { index in
+                Float(sin(Double(index) * 0.3) * 0.5 + 0.5)
             },
             isLocked: false
         )
@@ -104,8 +103,8 @@ struct WaveformVisualizerView: View {
 
         // Locked state
         WaveformVisualizerView(
-            audioLevels: (0..<60).map { i in
-                Float(sin(Double(i) * 0.2) * 0.4 + 0.4)
+            audioLevels: (0..<60).map { index in
+                Float(sin(Double(index) * 0.2) * 0.4 + 0.4)
             },
             isLocked: true
         )

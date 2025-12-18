@@ -92,9 +92,9 @@ final class WaveformWindowController {
         let panelSize = panel.frame.size
 
         // Center horizontally and vertically
-        let x = screenFrame.midX - (panelSize.width / 2)
-        let y = screenFrame.midY - (panelSize.height / 2)
+        let xPos = screenFrame.midX - (panelSize.width / 2)
+        let yPos = screenFrame.midY - (panelSize.height / 2)
 
-        panel.setFrameOrigin(NSPoint(x: x, y: y))
+        panel.setFrameOrigin(NSPoint(x: xPos, y: yPos))
     }
 }

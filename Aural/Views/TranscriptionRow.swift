@@ -17,14 +17,30 @@ struct TranscriptionRow: View {
                     Image(systemName: "clock.fill")
                         .font(.system(size: 10))
                         .foregroundStyle(BrandColors.primaryBlue.opacity(0.6))
-                    Text(transcription.timestamp, style: .time)
-                        .font(Typography.caption)
-                        .foregroundStyle(.secondary)
+                    if Calendar.current.isDateInToday(transcription.timestamp) {
+                        Text(transcription.timestamp, style: .time)
+                            .font(Typography.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text(formatDate(transcription.timestamp))
+                            .font(Typography.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 Spacer()
 
                 HStack(spacing: Spacing.xs) {
+                    if let providerName = transcription.providerName {
+                        Text(providerName)
+                            .font(Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, Spacing.xs)
+                            .padding(.vertical, 4)
+                            .background(Color.secondary.opacity(0.1))
+                            .cornerRadius(CornerRadius.sm)
+                    }
+
                     Text(formatDuration(transcription.duration))
                         .font(Typography.monoCaption)
                         .foregroundStyle(.secondary)
@@ -163,11 +179,21 @@ struct TranscriptionRow: View {
     }
 
     private func formatCost(_ cost: Double) -> String {
+        if cost <= 0 {
+            return "Free"
+        }
         // Always show actual cost, even if very small
         // Use 4 decimal places for precise tracking of small costs
         if cost < 0.01 {
             return String(format: "$%.4f", cost)
         }
         return String(format: "$%.3f", cost)
+    }
+
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
 }

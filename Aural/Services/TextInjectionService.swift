@@ -160,17 +160,21 @@ final class TextInjectionService {
         var focusedApp: CFTypeRef?
 
         let appError = AXUIElementCopyAttributeValue(systemWide, kAXFocusedApplicationAttribute as CFString, &focusedApp)
-        guard appError == .success, let focusedAppElement = focusedApp else {
+        guard appError == .success, let appElement = focusedApp else {
             return nil
         }
+        
+        // swiftlint:disable:next force_cast
+        let axApp = appElement as! AXUIElement
 
         var focusedElement: CFTypeRef?
-        let elementError = AXUIElementCopyAttributeValue(focusedAppElement as! AXUIElement, kAXFocusedUIElementAttribute as CFString, &focusedElement)
+        let elementError = AXUIElementCopyAttributeValue(axApp, kAXFocusedUIElementAttribute as CFString, &focusedElement)
 
         guard elementError == .success, let element = focusedElement else {
             return nil
         }
 
+        // swiftlint:disable:next force_cast
         return (element as! AXUIElement)
     }
 

@@ -92,8 +92,8 @@ final class AudioLevelMonitor {
         let step = recentLevels.count / count
         var result: [Float] = []
 
-        for i in 0..<count {
-            let index = i * step
+        for stepIndex in 0..<count {
+            let index = stepIndex * step
             result.append(recentLevels[index])
         }
 

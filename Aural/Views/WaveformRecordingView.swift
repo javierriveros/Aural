@@ -105,8 +105,8 @@ struct WaveformRecordingView: View {
     WaveformRecordingView(
         duration: 12.5,
         isLocked: false,
-        audioLevels: (0..<60).map { i in
-            Float(sin(Double(i) * 0.3) * 0.5 + 0.5)
+        audioLevels: (0..<60).map { index in
+            Float(sin(Double(index) * 0.3) * 0.5 + 0.5)
         },
         onTap: {}
     )
@@ -118,8 +118,8 @@ struct WaveformRecordingView: View {
     WaveformRecordingView(
         duration: 45.8,
         isLocked: true,
-        audioLevels: (0..<60).map { i in
-            Float(sin(Double(i) * 0.2) * 0.4 + 0.6)
+        audioLevels: (0..<60).map { index in
+            Float(sin(Double(index) * 0.2) * 0.4 + 0.6)
         },
         onTap: {}
     )

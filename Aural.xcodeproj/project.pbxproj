@@ -6,11 +6,32 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		C81713512EF3A33400831434 /* SwiftWhisper in Frameworks */ = {isa = PBXBuildFile; productRef = C81713502EF3A33400831434 /* SwiftWhisper */; };
+		C81713542EF3A44900831434 /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = C81713532EF3A44900831434 /* FluidAudio */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		C81713412EF39FFE00831434 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C88EAE8C2EA18B6D008BB33A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C88EAE932EA18B6E008BB33A;
+			remoteInfo = Aural;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		C817133D2EF39FFE00831434 /* AuralTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AuralTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C88EAE942EA18B6E008BB33A /* Aural.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Aural.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		C817133E2EF39FFE00831434 /* AuralTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = AuralTests;
+			sourceTree = "<group>";
+		};
 		C88EAE962EA18B6E008BB33A /* Aural */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Aural;
@@ -19,10 +40,19 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		C817133A2EF39FFE00831434 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		C88EAE912EA18B6E008BB33A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C81713542EF3A44900831434 /* FluidAudio in Frameworks */,
+				C81713512EF3A33400831434 /* SwiftWhisper in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -33,6 +63,7 @@
 			isa = PBXGroup;
 			children = (
 				C88EAE962EA18B6E008BB33A /* Aural */,
+				C817133E2EF39FFE00831434 /* AuralTests */,
 				C88EAE952EA18B6E008BB33A /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +72,7 @@
 			isa = PBXGroup;
 			children = (
 				C88EAE942EA18B6E008BB33A /* Aural.app */,
+				C817133D2EF39FFE00831434 /* AuralTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,6 +80,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		C817133C2EF39FFE00831434 /* AuralTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C81713432EF39FFE00831434 /* Build configuration list for PBXNativeTarget "AuralTests" */;
+			buildPhases = (
+				C81713392EF39FFE00831434 /* Sources */,
+				C817133A2EF39FFE00831434 /* Frameworks */,
+				C817133B2EF39FFE00831434 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C81713422EF39FFE00831434 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				C817133E2EF39FFE00831434 /* AuralTests */,
+			);
+			name = AuralTests;
+			packageProductDependencies = (
+			);
+			productName = AuralTests;
+			productReference = C817133D2EF39FFE00831434 /* AuralTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		C88EAE932EA18B6E008BB33A /* Aural */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = C88EAE9F2EA18B70008BB33A /* Build configuration list for PBXNativeTarget "Aural" */;
@@ -65,6 +120,8 @@
 			);
 			name = Aural;
 			packageProductDependencies = (
+				C81713502EF3A33400831434 /* SwiftWhisper */,
+				C81713532EF3A44900831434 /* FluidAudio */,
 			);
 			productName = Aural;
 			productReference = C88EAE942EA18B6E008BB33A /* Aural.app */;
@@ -77,9 +134,13 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2600;
+				LastSwiftUpdateCheck = 2610;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
+					C817133C2EF39FFE00831434 = {
+						CreatedOnToolsVersion = 26.1.1;
+						TestTargetID = C88EAE932EA18B6E008BB33A;
+					};
 					C88EAE932EA18B6E008BB33A = {
 						CreatedOnToolsVersion = 26.0.1;
 					};
@@ -94,17 +155,29 @@
 			);
 			mainGroup = C88EAE8B2EA18B6D008BB33A;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				C817134F2EF3A33400831434 /* XCRemoteSwiftPackageReference "SwiftWhisper" */,
+				C81713522EF3A44900831434 /* XCRemoteSwiftPackageReference "FluidAudio" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = C88EAE952EA18B6E008BB33A /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				C88EAE932EA18B6E008BB33A /* Aural */,
+				C817133C2EF39FFE00831434 /* AuralTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		C817133B2EF39FFE00831434 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		C88EAE922EA18B6E008BB33A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -115,6 +188,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		C81713392EF39FFE00831434 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		C88EAE902EA18B6E008BB33A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -124,7 +204,55 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		C81713422EF39FFE00831434 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C88EAE932EA18B6E008BB33A /* Aural */;
+			targetProxy = C81713412EF39FFE00831434 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		C81713442EF39FFE00831434 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.javier.AuralTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Aural.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Aural";
+			};
+			name = Debug;
+		};
+		C81713452EF39FFE00831434 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.javier.AuralTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Aural.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Aural";
+			};
+			name = Release;
+		};
 		C88EAE9D2EA18B70008BB33A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -178,7 +306,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -235,7 +363,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
@@ -310,6 +438,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		C81713432EF39FFE00831434 /* Build configuration list for PBXNativeTarget "AuralTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C81713442EF39FFE00831434 /* Debug */,
+				C81713452EF39FFE00831434 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		C88EAE8F2EA18B6D008BB33A /* Build configuration list for PBXProject "Aural" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -329,6 +466,38 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		C817134F2EF3A33400831434 /* XCRemoteSwiftPackageReference "SwiftWhisper" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/exPHAT/SwiftWhisper";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.2.0;
+			};
+		};
+		C81713522EF3A44900831434 /* XCRemoteSwiftPackageReference "FluidAudio" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/FluidInference/FluidAudio";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		C81713502EF3A33400831434 /* SwiftWhisper */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C817134F2EF3A33400831434 /* XCRemoteSwiftPackageReference "SwiftWhisper" */;
+			productName = SwiftWhisper;
+		};
+		C81713532EF3A44900831434 /* FluidAudio */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C81713522EF3A44900831434 /* XCRemoteSwiftPackageReference "FluidAudio" */;
+			productName = FluidAudio;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = C88EAE8C2EA18B6D008BB33A /* Project object */;
 }

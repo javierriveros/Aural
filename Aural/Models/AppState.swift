@@ -5,17 +5,25 @@ import SwiftData
 @Observable
 final class AppState {
     let audioRecorder = AudioRecorder()
-    let hotkeyMonitor = HotkeyMonitor()
-    let whisperService = WhisperService()
+    let shortcutManager = ShortcutManager()
+    let modelDownloadManager = ModelDownloadManager()
+
+    // Services
     let soundPlayer = SoundPlayer.shared
-    let floatingWidget = FloatingWidgetController()
-    let waveformWindow = WaveformWindowController()
     let audioLevelMonitor = AudioLevelMonitor()
     let audioProcessor = AudioProcessor()
+    let hotkeyMonitor = HotkeyMonitor()
+    let voiceCommandProcessor = VoiceCommandProcessor()
     let textInjectionService = TextInjectionService()
     let vocabularyService = VocabularyService()
-    let voiceCommandProcessor = VoiceCommandProcessor()
-    let shortcutManager = ShortcutManager()
+
+    // UI Controllers
+    private let floatingWidget = FloatingWidgetController()
+    private let waveformWindow = WaveformWindowController()
+    private(set) var openAIService = OpenAIService()
+    private(set) var groqService = GroqService()
+    private var localWhisperService: LocalWhisperService?
+    private var localParakeetService: LocalParakeetService?
 
     var modelContext: ModelContext?
 
@@ -69,13 +77,47 @@ final class AppState {
         get { UserDefaults.standard.bool(forKey: UserDefaultsKeys.textInjectionEnabled) }
         set { UserDefaults.standard.set(newValue, forKey: UserDefaultsKeys.textInjectionEnabled) }
     }
+    
+    // Stored properties for observability, synced with UserDefaults
+    var transcriptionMode: TranscriptionMode = .cloud {
+        didSet { 
+            UserDefaults.standard.set(transcriptionMode.rawValue, forKey: UserDefaultsKeys.transcriptionMode)
+            preloadCurrentProvider()
+        }
+    }
+    
+    var selectedCloudProvider: CloudProvider = .openai {
+        didSet { UserDefaults.standard.set(selectedCloudProvider.rawValue, forKey: UserDefaultsKeys.selectedCloudProvider) }
+    }
+    
+    var selectedModelId: String? = nil {
+        didSet { 
+            UserDefaults.standard.set(selectedModelId, forKey: UserDefaultsKeys.selectedModelId)
+            preloadCurrentProvider()
+        }
+    }
 
     init() {
+        // Load initial values from UserDefaults
+        let modeRaw = UserDefaults.standard.string(forKey: UserDefaultsKeys.transcriptionMode) ?? ""
+        self.transcriptionMode = TranscriptionMode(rawValue: modeRaw) ?? .cloud
+        
+        let providerRaw = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedCloudProvider) ?? ""
+        self.selectedCloudProvider = CloudProvider(rawValue: providerRaw) ?? .openai
+        
+        self.selectedModelId = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedModelId)
+        
         UserDefaults.standard.register(defaults: [
             UserDefaultsKeys.showFloatingWidget: true,
             UserDefaultsKeys.audioSpeedMultiplier: 1.0,
-            UserDefaultsKeys.textInjectionEnabled: false
+            UserDefaultsKeys.textInjectionEnabled: false,
+            UserDefaultsKeys.transcriptionMode: TranscriptionMode.cloud.rawValue,
+            UserDefaultsKeys.selectedCloudProvider: CloudProvider.openai.rawValue
         ])
+        
+        self.localWhisperService = LocalWhisperService(modelDownloadManager: modelDownloadManager)
+        self.localParakeetService = LocalParakeetService(modelDownloadManager: modelDownloadManager)
+        
         setupHotkeyCallbacks()
         setupFloatingWidgetCallbacks()
         setupWaveformWindowCallbacks()
@@ -85,6 +127,7 @@ final class AppState {
             print("Warning: Failed to start hotkey monitoring")
         }
         updateFloatingWidgetVisibility()
+        preloadCurrentProvider()
     }
 
     private func setupFloatingWidgetCallbacks() {
@@ -105,9 +148,7 @@ final class AppState {
 
     private func handleWidgetTap() {
         if isRecording {
-            if isRecordingLocked {
-                stopRecording()
-            }
+            if isRecordingLocked { stopRecording() }
         } else if !isTranscribing {
             startLockedRecording()
         }
@@ -206,7 +247,6 @@ final class AppState {
 
     private func startRecording() {
         guard !isRecording else { return }
-
         soundPlayer.playRecordingStart()
         audioLevelMonitor.reset()
 
@@ -216,12 +256,11 @@ final class AppState {
                 recordingURL = try await audioRecorder.startRecording()
                 isRecording = true
                 isRecordingLocked = false
-                updateFloatingWidgetVisibility()  // Ensure proper widget visibility
+                updateFloatingWidgetVisibility()
                 startWidgetUpdateTimer()
                 updateRecordingVisualization()
             } catch {
                 soundPlayer.playError()
-                print("Failed to start recording: \(error)")
                 updateFloatingWidget()
             }
         }
@@ -291,7 +330,8 @@ final class AppState {
                 processedURL = url
             }
 
-            let rawTranscription = try await whisperService.transcribe(audioURL: processedURL)
+            let provider = try getTranscriptionProvider()
+            let rawTranscription = try await provider.transcribe(audioURL: processedURL)
             let withVocabulary = vocabularyService.applyWordBoundaryReplacements(to: rawTranscription)
             let transcriptionText = voiceCommandProcessor.process(withVocabulary)
             lastTranscription = transcriptionText
@@ -306,12 +346,12 @@ final class AppState {
                 ClipboardService.copy(transcriptionText)
             }
 
-            // Calculate cost: $0.006 per minute
-            let costPerMinute = 0.006
-            let durationInMinutes = duration / 60.0
-            let cost = durationInMinutes * costPerMinute
-
-            saveTranscription(text: transcriptionText, duration: duration, cost: cost)
+            // Calculate cost using provider-specific logic
+            let cost = calculateCost(duration: duration)
+            let providerType = transcriptionMode.rawValue.lowercased()
+            let providerName = getProviderName()
+            
+            saveTranscription(text: transcriptionText, duration: duration, cost: cost, providerType: providerType, providerName: providerName)
 
             FileManager.default.safelyRemoveItem(at: processedURL)
 
@@ -326,10 +366,10 @@ final class AppState {
         updateFloatingWidget()
     }
 
-    private func saveTranscription(text: String, duration: TimeInterval, cost: Double) {
+    private func saveTranscription(text: String, duration: TimeInterval, cost: Double, providerType: String? = nil, providerName: String? = nil) {
         guard let context = modelContext else { return }
 
-        let transcription = Transcription(text: text, duration: duration, cost: cost)
+        let transcription = Transcription(text: text, duration: duration, cost: cost, providerType: providerType, providerName: providerName)
         context.insert(transcription)
 
         do {
@@ -428,6 +468,67 @@ final class AppState {
     private func stopWidgetUpdateTimer() {
         widgetUpdateTimer?.invalidate()
         widgetUpdateTimer = nil
+    }
+
+    private func getTranscriptionProvider() throws -> TranscriptionProvider {
+        switch transcriptionMode {
+        case .cloud:
+            switch selectedCloudProvider {
+            case .openai:
+                return openAIService
+            case .groq:
+                return groqService
+            }
+        case .local:
+            guard let modelId = selectedModelId,
+                  let model = ModelRegistry.model(forId: modelId) else {
+                throw NSError(domain: "AppState", code: -1, userInfo: [NSLocalizedDescriptionKey: "No local model selected"])
+            }
+            
+            switch model.family {
+            case .whisper:
+                guard let service = localWhisperService else {
+                    throw NSError(domain: "AppState", code: -2, userInfo: [NSLocalizedDescriptionKey: "Local Whisper service not initialized"])
+                }
+                return service
+            case .parakeet:
+                guard let service = localParakeetService else {
+                    throw NSError(domain: "AppState", code: -3, userInfo: [NSLocalizedDescriptionKey: "Local Parakeet service not initialized"])
+                }
+                return service
+            }
+        }
+    }
+    
+    private func getProviderName() -> String {
+        switch transcriptionMode {
+        case .cloud:
+            return selectedCloudProvider.rawValue
+        case .local:
+            if let modelId = selectedModelId, let model = ModelRegistry.model(forId: modelId) {
+                return model.name
+            }
+            return "Local"
+        }
+    }
+
+    private func calculateCost(duration: TimeInterval) -> Double {
+        if transcriptionMode == .local { return 0.0 }
+        
+        switch selectedCloudProvider {
+        case .openai:
+            return (duration / 60.0) * APIConstants.whisperPricePerMinute
+        case .groq:
+            return 0.0 // Currently free
+        }
+    }
+
+    private func preloadCurrentProvider() {
+        Task {
+            if let provider = try? getTranscriptionProvider() {
+                await provider.preload()
+            }
+        }
     }
 
     deinit {
