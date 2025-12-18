@@ -9,7 +9,7 @@ on:
 jobs:
   lint:
     name: SwiftLint
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
       - name: Install SwiftLint
@@ -19,14 +19,14 @@ jobs:
 
   test:
     name: Build & Test
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
       
       - name: Set up Xcode 16
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '16'
+          xcode-version: '16.1'
 
       - name: Show Xcode Version
         run: xcodebuild -version
@@ -54,14 +54,14 @@ jobs:
 
   build-release:
     name: Build Release
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
       
       - name: Set up Xcode 16
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '16'
+          xcode-version: '16.1'
       
       - name: Build Release
         run: |
