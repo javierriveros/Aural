@@ -20,8 +20,6 @@ final class AppState {
     // UI Controllers
     private let floatingWidget = FloatingWidgetController()
     private let waveformWindow = WaveformWindowController()
-    
-    // Providers - exposed for settings UI access
     private(set) var openAIService = OpenAIService()
     private(set) var groqService = GroqService()
     private var localWhisperService: LocalWhisperService?
@@ -150,9 +148,7 @@ final class AppState {
 
     private func handleWidgetTap() {
         if isRecording {
-            if isRecordingLocked {
-                stopRecording()
-            }
+            if isRecordingLocked { stopRecording() }
         } else if !isTranscribing {
             startLockedRecording()
         }
@@ -251,7 +247,6 @@ final class AppState {
 
     private func startRecording() {
         guard !isRecording else { return }
-
         soundPlayer.playRecordingStart()
         audioLevelMonitor.reset()
 
@@ -261,12 +256,11 @@ final class AppState {
                 recordingURL = try await audioRecorder.startRecording()
                 isRecording = true
                 isRecordingLocked = false
-                updateFloatingWidgetVisibility()  // Ensure proper widget visibility
+                updateFloatingWidgetVisibility()
                 startWidgetUpdateTimer()
                 updateRecordingVisualization()
             } catch {
                 soundPlayer.playError()
-                print("Failed to start recording: \(error)")
                 updateFloatingWidget()
             }
         }
@@ -531,11 +525,8 @@ final class AppState {
 
     private func preloadCurrentProvider() {
         Task {
-            do {
-                let provider = try getTranscriptionProvider()
+            if let provider = try? getTranscriptionProvider() {
                 await provider.preload()
-            } catch {
-                print("Preload failed: \(error)")
             }
         }
     }

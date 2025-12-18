@@ -33,8 +33,8 @@ voice commands, and powerful AI transcription.
 
 - **Global Hotkey Recording** - Record from anywhere with customizable hotkeys
   (default: Fn key)
-- **AI-Powered Transcription** - High-quality transcription using OpenAI's
-  Whisper API
+- **AI-Powered Transcription** - High-quality transcription using local models (Whisper, Parakeet) or cloud providers (OpenAI, Groq)
+- **Local On-Device Models** - Private, free, and offline transcription using Whisper and Parakeet (FluidAudio)
 - **Instant Results** - Automatic clipboard copy or direct text injection at
   cursor
 - **Modern UI** - Beautiful SwiftUI interface with smooth animations and brand
@@ -94,6 +94,9 @@ voice commands, and powerful AI transcription.
 - **Microphone** access
 - **Accessibility permissions** (for global hotkey monitoring and text
   injection)
+- **Local Models (Optional)**:
+  - Apple Silicon (M1/M2/M3) recommended for Parakeet on-device inference.
+  - 1-2GB of free disk space for local weights.
 
 ---
 
@@ -118,7 +121,7 @@ voice commands, and powerful AI transcription.
    - Press `⌘R` or click the Run button
    - The app will build and launch
 
-### Option 2: Download Release (Coming Soon)
+### Option 2: Download Release
 
 Pre-built binaries will be available on the
 [Releases](https://github.com/javierriveros/aural/releases) page.
@@ -148,6 +151,19 @@ Pre-built binaries will be available on the
 5. Click **"Save Settings"**
 
 Your API key is stored securely in UserDefaults.
+
+### 4. Local Transcription Setup (Optional)
+
+To enable local on-device transcription, you must add the following Swift Package dependencies to the Xcode project:
+
+1. **SwiftWhisper**: `https://github.com/exPHAT/SwiftWhisper.git` (for Whisper models)
+2. **FluidAudio**: `https://github.com/FluidInference/FluidAudio.git` (for Parakeet models)
+
+**To add packages:**
+1. Open **File** → **Add Package Dependencies...**
+2. Paste the URLs above and add them to the **Aural** target.
+
+Once added, navigate to **Settings** → **Transcription** and switch the mode to **Local**. Use the **Manage Models** view to select and download your preferred models.
 
 ### 3. Grant Permissions
 

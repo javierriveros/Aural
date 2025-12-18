@@ -66,7 +66,6 @@ struct ModelRow: View {
         appState.selectedModelId == model.id
     }
     
-    /// All models are now available for selection
     private var isAvailable: Bool {
         true
     }
@@ -82,16 +81,6 @@ struct ModelRow: View {
                     if isSelected {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundColor(.accentColor)
-                    }
-                    
-                    if !isAvailable {
-                        Text("Coming Soon")
-                            .font(.caption2)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.orange.opacity(0.2))
-                            .foregroundStyle(.orange)
-                            .cornerRadius(4)
                     }
                 }
                 
@@ -196,14 +185,12 @@ struct ModelRow: View {
             }
             .menuStyle(.button)
         } else {
-            // Show download button
             Button {
                 appState.modelDownloadManager.downloadModel(model)
             } label: {
                 Label("Download", systemImage: "icloud.and.arrow.down")
             }
             .buttonStyle(.bordered)
-            .disabled(!isAvailable)
         }
     }
 }

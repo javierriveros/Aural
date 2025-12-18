@@ -4,7 +4,6 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppState.self) private var appState
     
-    // MARK: - Transcription Settings
     @State private var apiKey: String = ""
     @State private var groqAPIKey: String = ""
     @State private var transcriptionMode: TranscriptionMode = .cloud
@@ -12,7 +11,6 @@ struct SettingsView: View {
     @State private var selectedModelId: String?
     @State private var showModelManager = false
     
-    // MARK: - API Testing
     @State private var isTestingAPI = false
     @State private var testResult: String?
     @State private var showSuccess = false
@@ -142,9 +140,6 @@ struct SettingsView: View {
                     Text(recordingMode.description)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-
-                    Toggle("Enable Sounds", isOn: $soundsEnabled)
-                        .toggleStyle(.switch)
                 } header: {
                     Text("Recording")
                         .font(.headline)

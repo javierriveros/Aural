@@ -1,13 +1,8 @@
-import Foundation
 import AVFoundation
+import Foundation
 #if canImport(SwiftWhisper)
 import SwiftWhisper
 #endif
-
-// Note: SwiftWhisper integration requires adding the package to the Xcode project:
-// https://github.com/exPHAT/SwiftWhisper.git
-//
-// Until SwiftWhisper is added, this service will throw an error indicating setup is required.
 
 final class LocalWhisperService: TranscriptionProvider {
     private let modelDownloadManager: ModelDownloadManager
@@ -32,8 +27,7 @@ final class LocalWhisperService: TranscriptionProvider {
             return false
         }
         
-        // SwiftWhisper package is not yet integrated
-        // Return false until the dependency is properly set up
+        // Return true if SwiftWhisper package is available
         #if canImport(SwiftWhisper)
         return true
         #else
@@ -83,32 +77,14 @@ final class LocalWhisperService: TranscriptionProvider {
     }
     
     func transcribe(audioURL: URL) async throws -> String {
-        guard let selectedId = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedModelId),
-              let model = ModelRegistry.model(forId: selectedId) else {
-            throw LocalModelError.noModelSelected
-        }
-        
-        let modelPath = modelDownloadManager.downloadPath(for: model)
-        guard FileManager.default.fileExists(atPath: modelPath.path) else {
-            throw LocalModelError.modelNotDownloaded
-        }
-        
-        // SwiftWhisper integration
-        // To enable local Whisper transcription:
-        // 1. Add SwiftWhisper package to Xcode: https://github.com/exPHAT/SwiftWhisper.git
-        // 2. Import SwiftWhisper at the top of this file
-        // 3. Implement the transcription logic below
-        
         #if canImport(SwiftWhisper)
         let whisper = try await ensureInitialized()
         
-        // Convert audio to 16kHz PCM WAV (required by Whisper)
         let pcmURL = try await audioConverter.convertToPCM(url: audioURL)
         defer { try? FileManager.default.removeItem(at: pcmURL) }
         
         return try await withCheckedThrowingContinuation { continuation in
             do {
-                // Read the audio file into a buffer
                 let file = try AVAudioFile(forReading: pcmURL)
                 guard let format = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: file.fileFormat.sampleRate, channels: 1, interleaved: false),
                       let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(file.length)) else {
@@ -121,7 +97,6 @@ final class LocalWhisperService: TranscriptionProvider {
                     throw LocalModelError.audioConversionFailed
                 }
                 
-                // Convert to [Float]
                 let frameLength = Int(buffer.frameLength)
                 let samples = Array(UnsafeBufferPointer(start: floatChannelData[0], count: frameLength))
                 

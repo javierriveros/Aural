@@ -16,29 +16,26 @@ final class LocalParakeetService: TranscriptionProvider {
     }
     
     var isAvailable: Bool {
-        // Parakeet is supported on macOS 14+ and Apple Silicon ideally,
-        // but let's assume availability if the user selected it.
-        // We could verify architecture here if needed.
+        // Assume availability if selected; FluidAudio handles specific HW requirements
         return true
     }
     
     private func ensureInitialized() async throws {
         if asrManager != nil { return }
         if isInitializing {
-            // Simple busy-wait for demo purposes, or just let strict concurrency handle it
-            // In a real app, we'd use an Actor or Task for shared initialization
-            // For now, we'll re-attempt or wait (simplified)
+            while isInitializing {
+                try await Task.sleep(nanoseconds: 100_000_000)
+            }
+            if asrManager != nil { return }
         }
         
         isInitializing = true
         defer { isInitializing = false }
         
         do {
-            // Determine version from selected model ID
             let selectedId = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedModelId)
             
-            // This downloads/loads models using FluidAudio's internal mechanics
-            // Using type inference (.v2, .v3) as the exact enum path seems to differ
+            // downloadAndLoad handles lazy loading and caching internally
             self.models = try await AsrModels.downloadAndLoad(version: selectedId == "parakeet-tdt-v3" ? .v3 : .v2)
             
             // Use type inference for configuration as per SDK examples
@@ -63,8 +60,6 @@ final class LocalParakeetService: TranscriptionProvider {
             throw LocalModelError.modelLoadFailed
         }
         
-        // FluidAudio expects audio buffer or specific format
-        // We'll read the file into a buffer
         guard let file = try? AVAudioFile(forReading: audioURL),
               let buffer = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: AVAudioFrameCount(file.length)) else {
             throw LocalModelError.audioConversionFailed
