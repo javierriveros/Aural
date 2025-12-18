@@ -1,4 +1,3 @@
-// swiftlint:disable:next identifier_name
 import SwiftUI
 
 // MARK: - Brand Colors
@@ -49,6 +48,7 @@ enum Typography {
 
 // MARK: - Spacing
 
+// swiftlint:disable identifier_name
 enum Spacing {
     static let xxs: CGFloat = 4
     static let xs: CGFloat = 8
@@ -84,6 +84,7 @@ enum Shadows {
         let y: CGFloat
     }
 }
+// swiftlint:enable identifier_name
 
 // MARK: - View Extensions
 

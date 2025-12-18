@@ -10,7 +10,7 @@ final class AudioFormatConverter {
         case writerStartFailed
         case exportFailed(Error)
         case invalidFormat
-        
+
         var errorDescription: String? {
             switch self {
             case .assetLoadFailed:
@@ -28,22 +28,22 @@ final class AudioFormatConverter {
             }
         }
     }
-    
+
     /// Converts input audio file to 16kHz Mono PCM WAV
     /// - Parameter url: Source audio file URL
     /// - Returns: URL to converted WAV file in temporary directory
     func convertToPCM(url: URL) async throws -> URL {
         let asset = AVURLAsset(url: url)
-        
+
         let tracks = try await asset.loadTracks(withMediaType: .audio)
         guard tracks.first != nil else {
             throw ConverterError.noAudioTrack
         }
-        
+
         let outputURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension("wav")
-        
+
         // Define target format: 16kHz, 1-channel (mono), 16-bit PCM
         guard let targetFormat = AVAudioFormat(
             commonFormat: .pcmFormatInt16,
@@ -53,18 +53,18 @@ final class AudioFormatConverter {
         ) else {
             throw ConverterError.invalidFormat
         }
-        
+
         return try await performConversion(asset: asset, outputURL: outputURL, targetFormat: targetFormat)
     }
-    
+
     private func performConversion(asset: AVAsset, outputURL: URL, targetFormat: AVAudioFormat) async throws -> URL {
         let reader = try AVAssetReader(asset: asset)
         let tracks = try await asset.loadTracks(withMediaType: .audio)
-        
+
         guard let assetTrack = tracks.first else {
             throw ConverterError.noAudioTrack
         }
-        
+
         let outputSettings: [String: Any] = [
             AVFormatIDKey: kAudioFormatLinearPCM,
             AVSampleRateKey: targetFormat.sampleRate,
@@ -74,7 +74,7 @@ final class AudioFormatConverter {
             AVLinearPCMIsFloatKey: false,
             AVLinearPCMIsNonInterleaved: false
         ]
-        
+
         let readerSettings: [String: Any] = [
             AVFormatIDKey: kAudioFormatLinearPCM,
             AVLinearPCMIsFloatKey: false,
@@ -82,27 +82,27 @@ final class AudioFormatConverter {
             AVLinearPCMIsNonInterleaved: false,
             AVLinearPCMIsBigEndianKey: false
         ]
-        
+
         let readerOutput = AVAssetReaderTrackOutput(track: assetTrack, outputSettings: readerSettings)
         reader.add(readerOutput)
-        
+
         let writer = try AVAssetWriter(outputURL: outputURL, fileType: .wav)
         let writerInput = AVAssetWriterInput(mediaType: .audio, outputSettings: outputSettings)
         writer.add(writerInput)
-        
+
         guard reader.startReading() else {
             throw ConverterError.readerStartFailed
         }
-        
+
         guard writer.startWriting() else {
             throw ConverterError.writerStartFailed
         }
-        
+
         writer.startSession(atSourceTime: .zero)
-        
+
         return try await withCheckedThrowingContinuation { continuation in
             let queue = DispatchQueue(label: "com.aural.audio.conversion", qos: .userInitiated)
-            
+
             writerInput.requestMediaDataWhenReady(on: queue) {
                 while writerInput.isReadyForMoreMediaData {
                     if reader.status == .failed {
@@ -111,7 +111,7 @@ final class AudioFormatConverter {
                         continuation.resume(throwing: ConverterError.assetLoadFailed)
                         return
                     }
-                    
+
                     if let buffer = readerOutput.copyNextSampleBuffer() {
                         if !writerInput.append(buffer) {
                             writerInput.markAsFinished()

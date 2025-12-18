@@ -163,7 +163,7 @@ final class TextInjectionService {
         guard appError == .success, let appElement = focusedApp else {
             return nil
         }
-        
+
         // swiftlint:disable:next force_cast
         let axApp = appElement as! AXUIElement
 

@@ -37,23 +37,23 @@ final class AudioFormatConverterTests: XCTestCase {
         let asset = AVURLAsset(url: outputURL)
         let track = try await asset.loadTracks(withMediaType: .audio).first
         XCTAssertNotNil(track)
-        
+
         // Needed for proper format checking on some platforms/tests
         let formatDescriptions = try await track?.load(.formatDescriptions)
         guard let formatDesc = formatDescriptions?.first else {
             XCTFail("Could not load format description")
             return
         }
-        
+
         guard let basicDescription = CMAudioFormatDescriptionGetStreamBasicDescription(formatDesc) else {
             XCTFail("Could not get basic description")
             return
         }
-        
+
         let sampleRate = basicDescription.pointee.mSampleRate
         let channels = basicDescription.pointee.mChannelsPerFrame
         let formatID = basicDescription.pointee.mFormatID
-        
+
         XCTAssertEqual(sampleRate, 16000.0, accuracy: 0.1)
         XCTAssertEqual(channels, 1)
         XCTAssertEqual(formatID, kAudioFormatLinearPCM)
@@ -61,7 +61,7 @@ final class AudioFormatConverterTests: XCTestCase {
 
     func testInvalidFile() async {
         let invalidURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        
+
         do {
             _ = try await converter.convertToPCM(url: invalidURL)
             XCTFail("Should have thrown error")

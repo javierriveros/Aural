@@ -29,48 +29,40 @@ enum AudioTestHelper {
         let bufferSize = 1024
 
         let format = AVAudioFormat(settings: settings)!
-        
+
         input.requestMediaDataWhenReady(on: DispatchQueue(label: "AudioGeneration")) {
             var currentSample = 0
-            
+
             while input.isReadyForMoreMediaData && currentSample < totalSamples {
                 let samplesToRead = min(bufferSize, totalSamples - currentSample)
-                
+
                 if let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(samplesToRead)) {
                     buffer.frameLength = AVAudioFrameCount(samplesToRead)
-                    // Write silence (zeros)
-                    if let channelData = buffer.int16ChannelData {
-                        // The original code was channelData[0][i] = 0.
-                        // The instruction implies a change to channelData[index] for a single channel.
-                        // To make it syntactically correct and match the provided snippet's structure,
-                        // we assume channelData[0] is the target pointer for the single channel.
-                        let channelPointer = channelData[0]
-                        let frequency: Float = 440.0 // Example frequency for sine wave
-                        let sampleRate: Float = Float(samplesPerSecond)
 
+                    if let channelData = buffer.int16ChannelData {
+                        let channelPointer = channelData[0]
                         for index in 0..<Int(buffer.frameLength) {
-                            let sampleValue = sin(2.0 * Float.pi * frequency * Float(index + currentSample) / sampleRate)
-                            // Scale float sample to Int16 range
-                            channelPointer[index] = Int16(sampleValue * Float(Int16.max))
+                            // Generate a simple silent buffer (all zeros) for testing
+                            channelPointer[index] = 0
                         }
                     }
-                    
+
                     input.append(buffer.toCMSampleBuffer(presentationTime: CMTime(value: CMTimeValue(currentSample), timescale: 44100))!)
                     currentSample += samplesToRead
                 }
             }
-            
+
             input.markAsFinished()
             writer.finishWriting {}
         }
-        
+
         // Wait for file to establish
         var attempts = 0
         while !FileManager.default.fileExists(atPath: audioFileURL.path) && attempts < 10 {
             Thread.sleep(forTimeInterval: 0.1)
             attempts += 1
         }
-        
+
         return audioFileURL
     }
 }
@@ -79,13 +71,13 @@ extension AVAudioPCMBuffer {
     func toCMSampleBuffer(presentationTime: CMTime) -> CMSampleBuffer? {
         var status: OSStatus = noErr
         var sampleBuffer: CMSampleBuffer?
-        
+
         var timing = CMSampleTimingInfo(
             duration: CMTime(value: 1, timescale: 44100),
             presentationTimeStamp: presentationTime,
             decodeTimeStamp: .invalid
         )
-        
+
         status = CMSampleBufferCreate(
             allocator: kCFAllocatorDefault,
             dataBuffer: nil,
@@ -100,9 +92,9 @@ extension AVAudioPCMBuffer {
             sampleSizeArray: nil,
             sampleBufferOut: &sampleBuffer
         )
-        
+
         guard status == noErr, let buffer = sampleBuffer else { return nil }
-        
+
         let status2 = CMSampleBufferSetDataBufferFromAudioBufferList(
             buffer,
             blockBufferAllocator: kCFAllocatorDefault,
@@ -110,7 +102,7 @@ extension AVAudioPCMBuffer {
             flags: 0,
             bufferList: audioBufferList
         )
-        
+
         return status2 == noErr ? buffer : nil
     }
 }

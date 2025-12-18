@@ -36,13 +36,13 @@ final class OpenAIService: TranscriptionProvider {
 
         let audioData = try Data(contentsOf: audioURL)
         let mimeType = MultipartFormDataBuilder.mimeType(for: audioURL)
-        
+
         var builder = MultipartFormDataBuilder()
         builder.addFile(name: "file", filename: audioURL.lastPathComponent, mimeType: mimeType, data: audioData)
         builder.addField(name: "model", value: APIConstants.whisperModel)
         builder.addField(name: "response_format", value: "json")
         builder.finalize()
-        
+
         request.setValue(builder.contentTypeHeader, forHTTPHeaderField: "Content-Type")
         request.httpBody = builder.data
 

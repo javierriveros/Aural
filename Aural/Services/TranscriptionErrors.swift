@@ -65,17 +65,17 @@ struct MultipartFormDataBuilder {
     private var body = Data()
     private let boundary: String
     private let lineBreak = "\r\n"
-    
+
     init(boundary: String = UUID().uuidString) {
         self.boundary = boundary
     }
-    
+
     var contentTypeHeader: String {
         "multipart/form-data; boundary=\(boundary)"
     }
-    
+
     var data: Data { body }
-    
+
     mutating func addFile(name: String, filename: String, mimeType: String, data: Data) {
         body.append("--\(boundary)\(lineBreak)")
         body.append("Content-Disposition: form-data; name=\"\(name)\"; filename=\"\(filename)\"\(lineBreak)")
@@ -83,17 +83,17 @@ struct MultipartFormDataBuilder {
         body.append(data)
         body.append(lineBreak)
     }
-    
+
     mutating func addField(name: String, value: String) {
         body.append("--\(boundary)\(lineBreak)")
         body.append("Content-Disposition: form-data; name=\"\(name)\"\(lineBreak)\(lineBreak)")
         body.append(value + lineBreak)
     }
-    
+
     mutating func finalize() {
         body.append("--\(boundary)--\(lineBreak)")
     }
-    
+
     /// Determines the MIME type based on file extension
     static func mimeType(for url: URL) -> String {
         switch url.pathExtension.lowercased() {

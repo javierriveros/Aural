@@ -3,30 +3,30 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppState.self) private var appState
-    
+
     @State private var apiKey: String = ""
     @State private var groqAPIKey: String = ""
     @State private var transcriptionMode: TranscriptionMode = .cloud
     @State private var selectedCloudProvider: CloudProvider = .openai
     @State private var selectedModelId: String?
     @State private var showModelManager = false
-    
+
     @State private var isTestingAPI = false
     @State private var testResult: String?
     @State private var showSuccess = false
-    
+
     // MARK: - Recording Settings
     @State private var recordingMode: RecordingMode = .holdOnly
     @State private var soundsEnabled = true
     @State private var widgetDisplayMode: WidgetDisplayMode = .waveform
     @State private var audioSpeedMultiplier: Float = 1.0
     @State private var textInjectionEnabled = false
-    
+
     // MARK: - Hotkey & Vocabulary
     @State private var hotkeyConfig = HotkeyConfiguration.default
     @State private var customVocabulary = CustomVocabulary()
     @State private var showVocabularyManager = false
-    
+
     // MARK: - Voice Commands & Shortcuts
     @State private var voiceCommandsEnabled = false
     @State private var keyboardShortcuts = KeyboardShortcutsConfiguration.default
@@ -62,7 +62,7 @@ struct SettingsView: View {
                         }
                     }
                     .pickerStyle(.segmented)
-                    
+
                     if transcriptionMode == .cloud {
                         Picker("Provider", selection: $selectedCloudProvider) {
                             ForEach(CloudProvider.allCases) { provider in
@@ -70,7 +70,7 @@ struct SettingsView: View {
                             }
                         }
                         .pickerStyle(.menu)
-                        
+
                         if selectedCloudProvider == .openai {
                             SecureField("OpenAI API Key", text: $apiKey)
                                 .textFieldStyle(.roundedBorder)
@@ -78,25 +78,25 @@ struct SettingsView: View {
                             SecureField("Groq API Key", text: $groqAPIKey)
                                 .textFieldStyle(.roundedBorder)
                         }
-                        
+
                         HStack {
                             Button("Test API Connection") {
                                 testAPIKey()
                             }
                             .disabled((selectedCloudProvider == .openai ? apiKey.isEmpty : groqAPIKey.isEmpty) || isTestingAPI)
-                            
+
                             if isTestingAPI {
                                 ProgressView()
                                     .scaleEffect(0.7)
                             }
                         }
-                        
+
                         if let result = testResult {
                             Text(result)
                                 .font(Typography.caption)
                                 .foregroundStyle(showSuccess ? BrandColors.success : BrandColors.error)
                         }
-                        
+
                         Text(selectedCloudProvider.description)
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -111,15 +111,15 @@ struct SettingsView: View {
                                     .font(.body)
                                     .foregroundColor(.secondary)
                             }
-                            
+
                             Spacer()
-                            
+
                             Button("Manage Models") {
                                 showModelManager = true
                             }
                             .buttonStyle(.bordered)
                         }
-                        
+
                         Text("On-device transcription. Free and private.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -395,7 +395,7 @@ struct SettingsView: View {
         transcriptionMode = appState.transcriptionMode
         selectedCloudProvider = appState.selectedCloudProvider
         selectedModelId = appState.selectedModelId
-        
+
         recordingMode = RecordingModePreferences.mode
         soundsEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.soundsEnabled)
         widgetDisplayMode = appState.widgetDisplayMode
@@ -419,7 +419,7 @@ struct SettingsView: View {
     private func saveSettings() {
         try? appState.openAIService.setAPIKey(apiKey)
         try? appState.groqService.setAPIKey(groqAPIKey)
-        
+
         appState.transcriptionMode = transcriptionMode
         appState.selectedCloudProvider = selectedCloudProvider
         appState.selectedModelId = selectedModelId

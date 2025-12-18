@@ -3,7 +3,7 @@ import SwiftUI
 struct ModelManagerView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
-    
+
     var body: some View {
         NavigationStack {
             List {
@@ -18,7 +18,7 @@ struct ModelManagerView: View {
                     Text("OpenAI Whisper models for speech-to-text. English-only models are faster and more accurate for English.")
                         .font(.caption2)
                 }
-                
+
                 Section {
                     let parakeetModels = ModelRegistry.models.filter { $0.family == .parakeet }
                     ForEach(parakeetModels) { model in
@@ -49,27 +49,27 @@ struct ModelManagerView: View {
 struct ModelRow: View {
     @Environment(AppState.self) private var appState
     let model: TranscriptionModel
-    
+
     private var isDownloaded: Bool {
         appState.modelDownloadManager.isModelDownloaded(model)
     }
-    
+
     private var isDownloading: Bool {
         appState.modelDownloadManager.downloadProgress[model.id] != nil && !isDownloaded
     }
-    
+
     private var progress: Double {
         appState.modelDownloadManager.downloadProgress[model.id] ?? 0
     }
-    
+
     private var isSelected: Bool {
         appState.selectedModelId == model.id
     }
-    
+
     private var isAvailable: Bool {
         true
     }
-    
+
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
@@ -77,17 +77,17 @@ struct ModelRow: View {
                     Text(model.name)
                         .font(.headline)
                         .foregroundStyle(isAvailable ? .primary : .secondary)
-                    
+
                     if isSelected {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundColor(.accentColor)
                     }
                 }
-                
+
                 Text(model.description)
                     .font(.caption)
                     .foregroundColor(.secondary)
-                
+
                 HStack {
                     Text(model.size)
                         .font(.caption2)
@@ -95,7 +95,7 @@ struct ModelRow: View {
                         .padding(.vertical, 2)
                         .background(Color.secondary.opacity(0.1))
                         .cornerRadius(4)
-                    
+
                     Text(languageDisplayText)
                         .font(.caption2)
                         .padding(.horizontal, 6)
@@ -104,14 +104,14 @@ struct ModelRow: View {
                         .cornerRadius(4)
                 }
             }
-            
+
             Spacer()
-            
+
             actionButton
         }
         .padding(.vertical, 4)
     }
-    
+
     private var languageDisplayText: String {
         if model.languages.contains("all") {
             return "Multilingual"
@@ -121,7 +121,7 @@ struct ModelRow: View {
             return model.languages.joined(separator: ", ")
         }
     }
-    
+
     @ViewBuilder
     private var actionButton: some View {
         if model.managedBySDK {
@@ -131,7 +131,7 @@ struct ModelRow: View {
                 Label("Auto-Managed", systemImage: "bolt.badge.automatic")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
-                
+
                 Button(isSelected ? "Selected" : "Select") {
                     appState.selectedModelId = model.id
                 }
@@ -149,7 +149,7 @@ struct ModelRow: View {
                         .font(.caption2)
                         .foregroundColor(.secondary)
                 }
-                
+
                 Button {
                     appState.modelDownloadManager.cancelDownload(for: model)
                 } label: {
@@ -166,9 +166,9 @@ struct ModelRow: View {
                     appState.selectedModelId = model.id
                 }
                 .disabled(isSelected)
-                
+
                 Divider()
-                
+
                 Button("Delete", role: .destructive) {
                     appState.modelDownloadManager.deleteModel(model)
                     if isSelected {

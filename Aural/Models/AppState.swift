@@ -75,26 +75,25 @@ final class AppState {
         get { UserDefaults.standard.bool(forKey: UserDefaultsKeys.textInjectionEnabled) }
         set { UserDefaults.standard.set(newValue, forKey: UserDefaultsKeys.textInjectionEnabled) }
     }
-    
+
     // Stored properties for observability, synced with UserDefaults
     var transcriptionMode: TranscriptionMode = .cloud {
-        didSet { 
+        didSet {
             UserDefaults.standard.set(transcriptionMode.rawValue, forKey: UserDefaultsKeys.transcriptionMode)
             preloadCurrentProvider()
         }
     }
-    
+
     var selectedCloudProvider: CloudProvider = .openai {
         didSet { UserDefaults.standard.set(selectedCloudProvider.rawValue, forKey: UserDefaultsKeys.selectedCloudProvider) }
     }
-    
+
     var selectedModelId: String? {
-        didSet { 
+        didSet {
             UserDefaults.standard.set(selectedModelId, forKey: UserDefaultsKeys.selectedModelId)
             preloadCurrentProvider()
         }
     }
-
 
     init(
         audioRecorder: AudioRecorderProtocol = AudioRecorder(),
@@ -106,12 +105,12 @@ final class AppState {
         // Load initial values from UserDefaults
         let modeRaw = UserDefaults.standard.string(forKey: UserDefaultsKeys.transcriptionMode) ?? ""
         self.transcriptionMode = TranscriptionMode(rawValue: modeRaw) ?? .cloud
-        
+
         let providerRaw = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedCloudProvider) ?? ""
         self.selectedCloudProvider = CloudProvider(rawValue: providerRaw) ?? .openai
-        
+
         self.selectedModelId = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedModelId)
-        
+
         UserDefaults.standard.register(defaults: [
             UserDefaultsKeys.showFloatingWidget: true,
             UserDefaultsKeys.audioSpeedMultiplier: 1.0,
@@ -119,10 +118,10 @@ final class AppState {
             UserDefaultsKeys.transcriptionMode: TranscriptionMode.cloud.rawValue,
             UserDefaultsKeys.selectedCloudProvider: CloudProvider.openai.rawValue
         ])
-        
+
         self.localWhisperService = LocalWhisperService(modelDownloadManager: modelDownloadManager)
         self.localParakeetService = LocalParakeetService(modelDownloadManager: modelDownloadManager)
-        
+
         setupHotkeyCallbacks()
         setupFloatingWidgetCallbacks()
         setupWaveformWindowCallbacks()
@@ -355,7 +354,7 @@ final class AppState {
             let cost = calculateCost(duration: duration)
             let providerType = transcriptionMode.rawValue.lowercased()
             let providerName = getProviderName()
-            
+
             saveTranscription(text: transcriptionText, duration: duration, cost: cost, providerType: providerType, providerName: providerName)
 
             FileManager.default.safelyRemoveItem(at: processedURL)
@@ -489,7 +488,7 @@ final class AppState {
                   let model = ModelRegistry.model(forId: modelId) else {
                 throw NSError(domain: "AppState", code: -1, userInfo: [NSLocalizedDescriptionKey: "No local model selected"])
             }
-            
+
             switch model.family {
             case .whisper:
                 guard let service = localWhisperService else {
@@ -504,7 +503,7 @@ final class AppState {
             }
         }
     }
-    
+
     private func getProviderName() -> String {
         switch transcriptionMode {
         case .cloud:
@@ -519,7 +518,7 @@ final class AppState {
 
     private func calculateCost(duration: TimeInterval) -> Double {
         if transcriptionMode == .local { return 0.0 }
-        
+
         switch selectedCloudProvider {
         case .openai:
             return (duration / 60.0) * APIConstants.whisperPricePerMinute

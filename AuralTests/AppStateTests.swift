@@ -11,10 +11,10 @@ final class AppStateTests: XCTestCase {
         // Clear UserDefaults
         let domain = Bundle.main.bundleIdentifier!
         UserDefaults.standard.removePersistentDomain(forName: domain)
-        
+
         audioRecorderMock = AudioRecorderMock()
         audioProcessorMock = AudioProcessorMock()
-        
+
         appState = AppState(
             audioRecorder: audioRecorderMock,
             audioProcessor: audioProcessorMock
@@ -38,7 +38,7 @@ final class AppStateTests: XCTestCase {
     func testTranscriptionModePersistence() {
         appState.transcriptionMode = .local
         XCTAssertEqual(UserDefaults.standard.string(forKey: UserDefaultsKeys.transcriptionMode), "local")
-        
+
         appState.transcriptionMode = .cloud
         XCTAssertEqual(UserDefaults.standard.string(forKey: UserDefaultsKeys.transcriptionMode), "cloud")
     }
@@ -61,7 +61,7 @@ final class AppStateTests: XCTestCase {
         // This is a placeholder for when we refactor HotkeyMonitor or expose internal triggers.
     }
     */
-    
+
     func testDependencyInjection() {
         // Verify that the appState is using our mocks
         XCTAssertIdentical(appState.audioRecorder, audioRecorderMock)

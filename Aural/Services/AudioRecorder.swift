@@ -41,7 +41,7 @@ enum RecordingError: LocalizedError {
 protocol AudioRecorderProtocol: AnyObject {
     var state: RecordingState { get }
     var recordingDuration: TimeInterval { get }
-    
+
     func setLevelMonitor(_ monitor: AudioLevelMonitor)
     func requestPermission() async -> Bool
     func startRecording() async throws -> URL

@@ -92,7 +92,7 @@ enum VoiceCommandRegistry {
             for trigger in command.triggers {
                 let pattern = "\\b\(NSRegularExpression.escapedPattern(for: command.caseSensitive ? trigger : trigger.lowercased()))\\b"
                 let options: NSRegularExpression.Options = command.caseSensitive ? [] : [.caseInsensitive]
-                
+
                 if let regex = try? NSRegularExpression(pattern: pattern, options: options) {
                     triggers.append(CachedTrigger(
                         command: command,
