@@ -35,6 +35,8 @@ enum LocalModelError: LocalizedError {
     case initializationFailed
     case transcriptionFailed(String)
     case notImplemented
+    case modelLoadFailed
+    case audioConversionFailed
 
     var errorDescription: String? {
         switch self {
@@ -48,6 +50,10 @@ enum LocalModelError: LocalizedError {
             return "Transcription failed: \(message)"
         case .notImplemented:
             return "This feature is not yet implemented"
+        case .modelLoadFailed:
+            return "Failed to load the model"
+        case .audioConversionFailed:
+            return "Failed to convert audio file"
         }
     }
 }

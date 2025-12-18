@@ -80,28 +80,35 @@ final class AppState {
         set { UserDefaults.standard.set(newValue, forKey: UserDefaultsKeys.textInjectionEnabled) }
     }
     
-    var transcriptionMode: TranscriptionMode {
-        get {
-            let raw = UserDefaults.standard.string(forKey: UserDefaultsKeys.transcriptionMode) ?? ""
-            return TranscriptionMode(rawValue: raw) ?? .cloud
+    // Stored properties for observability, synced with UserDefaults
+    var transcriptionMode: TranscriptionMode = .cloud {
+        didSet { 
+            UserDefaults.standard.set(transcriptionMode.rawValue, forKey: UserDefaultsKeys.transcriptionMode)
+            preloadCurrentProvider()
         }
-        set { UserDefaults.standard.set(newValue.rawValue, forKey: UserDefaultsKeys.transcriptionMode) }
     }
     
-    var selectedCloudProvider: CloudProvider {
-        get {
-            let raw = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedCloudProvider) ?? ""
-            return CloudProvider(rawValue: raw) ?? .openai
-        }
-        set { UserDefaults.standard.set(newValue.rawValue, forKey: UserDefaultsKeys.selectedCloudProvider) }
+    var selectedCloudProvider: CloudProvider = .openai {
+        didSet { UserDefaults.standard.set(selectedCloudProvider.rawValue, forKey: UserDefaultsKeys.selectedCloudProvider) }
     }
     
-    var selectedModelId: String? {
-        get { UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedModelId) }
-        set { UserDefaults.standard.set(newValue, forKey: UserDefaultsKeys.selectedModelId) }
+    var selectedModelId: String? = nil {
+        didSet { 
+            UserDefaults.standard.set(selectedModelId, forKey: UserDefaultsKeys.selectedModelId)
+            preloadCurrentProvider()
+        }
     }
 
     init() {
+        // Load initial values from UserDefaults
+        let modeRaw = UserDefaults.standard.string(forKey: UserDefaultsKeys.transcriptionMode) ?? ""
+        self.transcriptionMode = TranscriptionMode(rawValue: modeRaw) ?? .cloud
+        
+        let providerRaw = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedCloudProvider) ?? ""
+        self.selectedCloudProvider = CloudProvider(rawValue: providerRaw) ?? .openai
+        
+        self.selectedModelId = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedModelId)
+        
         UserDefaults.standard.register(defaults: [
             UserDefaultsKeys.showFloatingWidget: true,
             UserDefaultsKeys.audioSpeedMultiplier: 1.0,
@@ -122,6 +129,7 @@ final class AppState {
             print("Warning: Failed to start hotkey monitoring")
         }
         updateFloatingWidgetVisibility()
+        preloadCurrentProvider()
     }
 
     private func setupFloatingWidgetCallbacks() {
@@ -518,6 +526,17 @@ final class AppState {
             return (duration / 60.0) * APIConstants.whisperPricePerMinute
         case .groq:
             return 0.0 // Currently free
+        }
+    }
+
+    private func preloadCurrentProvider() {
+        Task {
+            do {
+                let provider = try getTranscriptionProvider()
+                await provider.preload()
+            } catch {
+                print("Preload failed: \(error)")
+            }
         }
     }
 

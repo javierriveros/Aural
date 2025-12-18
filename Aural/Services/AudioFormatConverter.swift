@@ -76,7 +76,16 @@ final class AudioFormatConverter {
             AVLinearPCMIsNonInterleaved: false
         ]
         
-        let readerOutput = AVAssetReaderTrackOutput(track: assetTrack, outputSettings: nil)
+        // Configure reader to output uncompressed PCM
+        let readerSettings: [String: Any] = [
+            AVFormatIDKey: kAudioFormatLinearPCM,
+            AVLinearPCMIsFloatKey: false,
+            AVLinearPCMBitDepthKey: 16,
+            AVLinearPCMIsNonInterleaved: false,
+            AVLinearPCMIsBigEndianKey: false
+        ]
+        
+        let readerOutput = AVAssetReaderTrackOutput(track: assetTrack, outputSettings: readerSettings)
         reader.add(readerOutput)
         
         let writer = try AVAssetWriter(outputURL: outputURL, fileType: .wav)

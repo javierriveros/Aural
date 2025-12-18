@@ -27,9 +27,8 @@ struct ModelManagerView: View {
                 } header: {
                     Text("Parakeet Models")
                 } footer: {
-                    Text("NVIDIA Parakeet models. Note: CoreML support is coming soon.")
+                    Text("NVIDIA Parakeet models powered by FluidAudio for high-speed local transcription.")
                         .font(.caption2)
-                        .foregroundStyle(.orange)
                 }
             }
             .navigationTitle("Manage Models")
@@ -67,9 +66,9 @@ struct ModelRow: View {
         appState.selectedModelId == model.id
     }
     
-    /// Parakeet models are not yet available (CoreML integration pending)
+    /// All models are now available for selection
     private var isAvailable: Bool {
-        model.family != .parakeet
+        true
     }
     
     var body: some View {
@@ -136,7 +135,21 @@ struct ModelRow: View {
     
     @ViewBuilder
     private var actionButton: some View {
-        if isDownloading {
+        if model.managedBySDK {
+            // SDK managed models (like Parakeet via FluidAudio) handle their own downloading
+            // lazily when initialized.
+            HStack(spacing: 8) {
+                Label("Auto-Managed", systemImage: "bolt.badge.automatic")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                
+                Button(isSelected ? "Selected" : "Select") {
+                    appState.selectedModelId = model.id
+                }
+                .buttonStyle(.bordered)
+                .disabled(isSelected)
+            }
+        } else if isDownloading {
             // Show progress with cancel button
             HStack(spacing: 8) {
                 VStack(alignment: .trailing, spacing: 2) {
