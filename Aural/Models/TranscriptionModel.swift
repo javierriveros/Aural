@@ -21,10 +21,10 @@ struct TranscriptionModel: Identifiable, Codable, Hashable {
     let languages: [String]
     let description: String
     var isDownloaded: Bool = false
-    
+
     // CoreML model identifier if applicable
     var coreMLIdentifier: String?
-    
+
     // Whether the model is managed by an external SDK (e.g. FluidAudio)
     var managedBySDK: Bool = false
 }

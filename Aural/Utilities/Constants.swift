@@ -6,6 +6,7 @@ import Foundation
 
 enum UserDefaultsKeys {
     static let openAIAPIKey = "openai_api_key"
+    static let groqAPIKey = "groq_api_key"
     static let showFloatingWidget = "show_floating_widget"
     static let widgetDisplayMode = "widget_display_mode"
     static let audioSpeedMultiplier = "audio_speed_multiplier"

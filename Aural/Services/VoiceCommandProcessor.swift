@@ -40,7 +40,7 @@ final class VoiceCommandProcessor {
         range: Range<String.Index>
     ) -> String {
         var result = text
-        
+
         // Adjust range to include one adjacent space if it exists, to avoid double spaces
         var adjustedRange = range
         if range.lowerBound > result.startIndex && result[result.index(before: range.lowerBound)] == " " {
@@ -142,7 +142,7 @@ final class VoiceCommandProcessor {
         }
 
         if searchIndex < result.endIndex {
-            let wordEnd = result[searchIndex...].firstIndex(where: { $0.isWhitespace || $0.isPunctuation }) ?? result.endIndex
+            let wordEnd = result[searchIndex...].firstIndex { $0.isWhitespace || $0.isPunctuation } ?? result.endIndex
             let wordRange = searchIndex..<wordEnd
 
             if !wordRange.isEmpty {
@@ -168,7 +168,7 @@ final class VoiceCommandProcessor {
         }
 
         if searchIndex < result.endIndex {
-            let wordEnd = result[searchIndex...].firstIndex(where: { $0.isWhitespace || $0.isPunctuation }) ?? result.endIndex
+            let wordEnd = result[searchIndex...].firstIndex { $0.isWhitespace || $0.isPunctuation } ?? result.endIndex
             let wordRange = searchIndex..<wordEnd
 
             if !wordRange.isEmpty {
@@ -193,7 +193,7 @@ final class VoiceCommandProcessor {
         }
 
         if searchIndex < result.endIndex {
-            let wordEnd = result[searchIndex...].firstIndex(where: { $0.isWhitespace || $0.isPunctuation }) ?? result.endIndex
+            let wordEnd = result[searchIndex...].firstIndex { $0.isWhitespace || $0.isPunctuation } ?? result.endIndex
             let wordRange = searchIndex..<wordEnd
 
             if !wordRange.isEmpty {
@@ -244,7 +244,7 @@ final class VoiceCommandProcessor {
         var workingText = String(prefix).trimmingCharacters(in: .whitespaces)
 
         let sentenceEnders = CharacterSet(charactersIn: ".!?")
-        
+
         if let lastEnderIdx = workingText.unicodeScalars.lastIndex(where: { sentenceEnders.contains($0) }) {
             let remainingText = workingText[..<lastEnderIdx]
             if let secondToLastEnderIdx = remainingText.unicodeScalars.lastIndex(where: { sentenceEnders.contains($0) }) {

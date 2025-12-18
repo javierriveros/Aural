@@ -4,20 +4,18 @@ import SwiftData
 
 @Observable
 final class AppState {
-    let audioRecorder = AudioRecorder()
+    let audioRecorder: AudioRecorderProtocol
     let shortcutManager = ShortcutManager()
     let modelDownloadManager = ModelDownloadManager()
 
-    // Services
     let soundPlayer = SoundPlayer.shared
     let audioLevelMonitor = AudioLevelMonitor()
-    let audioProcessor = AudioProcessor()
+    let audioProcessor: AudioProcessorProtocol
     let hotkeyMonitor = HotkeyMonitor()
     let voiceCommandProcessor = VoiceCommandProcessor()
     let textInjectionService = TextInjectionService()
     let vocabularyService = VocabularyService()
 
-    // UI Controllers
     private let floatingWidget = FloatingWidgetController()
     private let waveformWindow = WaveformWindowController()
     private(set) var openAIService = OpenAIService()
@@ -77,36 +75,42 @@ final class AppState {
         get { UserDefaults.standard.bool(forKey: UserDefaultsKeys.textInjectionEnabled) }
         set { UserDefaults.standard.set(newValue, forKey: UserDefaultsKeys.textInjectionEnabled) }
     }
-    
+
     // Stored properties for observability, synced with UserDefaults
     var transcriptionMode: TranscriptionMode = .cloud {
-        didSet { 
+        didSet {
             UserDefaults.standard.set(transcriptionMode.rawValue, forKey: UserDefaultsKeys.transcriptionMode)
             preloadCurrentProvider()
         }
     }
-    
+
     var selectedCloudProvider: CloudProvider = .openai {
         didSet { UserDefaults.standard.set(selectedCloudProvider.rawValue, forKey: UserDefaultsKeys.selectedCloudProvider) }
     }
-    
-    var selectedModelId: String? = nil {
-        didSet { 
+
+    var selectedModelId: String? {
+        didSet {
             UserDefaults.standard.set(selectedModelId, forKey: UserDefaultsKeys.selectedModelId)
             preloadCurrentProvider()
         }
     }
 
-    init() {
+    init(
+        audioRecorder: AudioRecorderProtocol = AudioRecorder(),
+        audioProcessor: AudioProcessorProtocol = AudioProcessor()
+    ) {
+        self.audioRecorder = audioRecorder
+        self.audioProcessor = audioProcessor
+
         // Load initial values from UserDefaults
         let modeRaw = UserDefaults.standard.string(forKey: UserDefaultsKeys.transcriptionMode) ?? ""
         self.transcriptionMode = TranscriptionMode(rawValue: modeRaw) ?? .cloud
-        
+
         let providerRaw = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedCloudProvider) ?? ""
         self.selectedCloudProvider = CloudProvider(rawValue: providerRaw) ?? .openai
-        
+
         self.selectedModelId = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedModelId)
-        
+
         UserDefaults.standard.register(defaults: [
             UserDefaultsKeys.showFloatingWidget: true,
             UserDefaultsKeys.audioSpeedMultiplier: 1.0,
@@ -114,10 +118,10 @@ final class AppState {
             UserDefaultsKeys.transcriptionMode: TranscriptionMode.cloud.rawValue,
             UserDefaultsKeys.selectedCloudProvider: CloudProvider.openai.rawValue
         ])
-        
+
         self.localWhisperService = LocalWhisperService(modelDownloadManager: modelDownloadManager)
         self.localParakeetService = LocalParakeetService(modelDownloadManager: modelDownloadManager)
-        
+
         setupHotkeyCallbacks()
         setupFloatingWidgetCallbacks()
         setupWaveformWindowCallbacks()
@@ -239,7 +243,7 @@ final class AppState {
             stopRecording()
         } else if isRecording && !isRecordingLocked {
             isRecordingLocked = true
-            updateRecordingVisualization()  // Update visualization with new locked state
+            updateRecordingVisualization()
         } else if !isRecording {
             startLockedRecording()
         }
@@ -278,7 +282,7 @@ final class AppState {
                 recordingURL = try await audioRecorder.startRecording()
                 isRecording = true
                 isRecordingLocked = true
-                updateFloatingWidgetVisibility()  // Ensure proper widget visibility
+                updateFloatingWidgetVisibility()
                 startWidgetUpdateTimer()
                 updateRecordingVisualization()
             } catch {
@@ -299,7 +303,7 @@ final class AppState {
             if let url = audioRecorder.stopRecording() {
                 isRecording = false
                 isRecordingLocked = false
-                updateFloatingWidgetVisibility()  // Show simple widget again when idle
+                updateFloatingWidgetVisibility()
                 await handleRecordingComplete(url: url)
             }
         }
@@ -350,7 +354,7 @@ final class AppState {
             let cost = calculateCost(duration: duration)
             let providerType = transcriptionMode.rawValue.lowercased()
             let providerName = getProviderName()
-            
+
             saveTranscription(text: transcriptionText, duration: duration, cost: cost, providerType: providerType, providerName: providerName)
 
             FileManager.default.safelyRemoveItem(at: processedURL)
@@ -484,7 +488,7 @@ final class AppState {
                   let model = ModelRegistry.model(forId: modelId) else {
                 throw NSError(domain: "AppState", code: -1, userInfo: [NSLocalizedDescriptionKey: "No local model selected"])
             }
-            
+
             switch model.family {
             case .whisper:
                 guard let service = localWhisperService else {
@@ -499,7 +503,7 @@ final class AppState {
             }
         }
     }
-    
+
     private func getProviderName() -> String {
         switch transcriptionMode {
         case .cloud:
@@ -514,7 +518,7 @@ final class AppState {
 
     private func calculateCost(duration: TimeInterval) -> Double {
         if transcriptionMode == .local { return 0.0 }
-        
+
         switch selectedCloudProvider {
         case .openai:
             return (duration / 60.0) * APIConstants.whisperPricePerMinute

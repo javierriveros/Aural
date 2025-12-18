@@ -159,10 +159,10 @@ struct FloatingWidgetView: View {
 
 #Preview {
     VStack(spacing: 20) {
-        FloatingWidgetView(state: .idle, onTap: {})
-        FloatingWidgetView(state: .recording(duration: 5.3, isLocked: false), onTap: {})
-        FloatingWidgetView(state: .recording(duration: 65.5, isLocked: true), onTap: {})
-        FloatingWidgetView(state: .transcribing, onTap: {})
+        FloatingWidgetView(state: .idle) {}
+        FloatingWidgetView(state: .recording(duration: 5.3, isLocked: false)) {}
+        FloatingWidgetView(state: .recording(duration: 65.5, isLocked: true)) {}
+        FloatingWidgetView(state: .transcribing) {}
     }
     .padding()
     .frame(width: 300)

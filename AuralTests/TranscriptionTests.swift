@@ -8,7 +8,7 @@ final class TranscriptionTests: XCTestCase {
         let cost = 0.05
         let providerType = "cloud"
         let providerName = "OpenAI"
-        
+
         let transcription = Transcription(
             text: text,
             duration: duration,
@@ -16,7 +16,7 @@ final class TranscriptionTests: XCTestCase {
             providerType: providerType,
             providerName: providerName
         )
-        
+
         XCTAssertEqual(transcription.text, text)
         XCTAssertEqual(transcription.duration, duration)
         XCTAssertEqual(transcription.cost, cost)
@@ -25,13 +25,13 @@ final class TranscriptionTests: XCTestCase {
         XCTAssertNotNil(transcription.id)
         XCTAssertNotNil(transcription.timestamp)
     }
-    
+
     func testTranscriptionDefaultValues() {
         let text = "Test transcription"
         let duration: TimeInterval = 5.0
-        
+
         let transcription = Transcription(text: text, duration: duration)
-        
+
         XCTAssertEqual(transcription.cost, 0.0)
         XCTAssertNil(transcription.providerType)
         XCTAssertNil(transcription.providerName)

@@ -33,7 +33,7 @@ struct ModelRegistry {
             languages: ["en"],
             description: "High accuracy English model."
         ),
-        
+
         // Whisper Models (Multilingual)
         TranscriptionModel(
             id: "whisper-tiny",
@@ -55,7 +55,7 @@ struct ModelRegistry {
             languages: ["all"],
             description: "Good balance for multiple languages."
         ),
-        
+
         // Parakeet Models (NVIDIA) - Using CoreML versions from Fluid Inference
         TranscriptionModel(
             id: "parakeet-tdt-0.6b-v2",
@@ -82,7 +82,7 @@ struct ModelRegistry {
             managedBySDK: true
         )
     ]
-    
+
     static func model(forId id: String) -> TranscriptionModel? {
         models.first { $0.id == id }
     }

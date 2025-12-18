@@ -1,5 +1,4 @@
 disabled_rules:
-  - trailing_whitespace
   - line_length
   - todo
 
@@ -11,6 +10,17 @@ opt_in_rules:
   - switch_case_alignment
   - vertical_parameter_alignment_on_call
   - yoda_condition
+  - shorthand_operator
+  - unused_closure_parameter
+  - unused_setter_value
+  - unneeded_override
+  - empty_string
+  - fatal_error_message
+  - duplicate_imports
+  - contains_over_first_not_nil
+  - discouraged_optional_collection
+  - redundant_discardable_let
+  - trailing_closure
 
 excluded:
   - Carthage
@@ -21,12 +31,12 @@ excluded:
 analyzer_rules:
   - explicit_self
 
-force_cast: warning
-force_try: warning
+force_cast: error
+force_try: error
+
 function_body_length: 300
 cyclomatic_complexity: 20
 file_length: 1000
 type_body_length: 500
 
 reporter: "xcode"
-

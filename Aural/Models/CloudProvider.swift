@@ -3,9 +3,9 @@ import Foundation
 enum CloudProvider: String, Codable, CaseIterable, Identifiable {
     case openai = "OpenAI"
     case groq = "Groq"
-    
+
     var id: String { rawValue }
-    
+
     var apiEndpoint: URL {
         switch self {
         case .openai:
@@ -14,11 +14,11 @@ enum CloudProvider: String, Codable, CaseIterable, Identifiable {
             return URL(string: APIConstants.groqAPIURL)!
         }
     }
-    
+
     var requiresAPIKey: Bool {
         return true
     }
-    
+
     var description: String {
         switch self {
         case .openai:
@@ -27,7 +27,7 @@ enum CloudProvider: String, Codable, CaseIterable, Identifiable {
             return "Ultrafast transcription using Groq LPU."
         }
     }
-    
+
     var priceInfo: String {
         switch self {
         case .openai:
@@ -36,7 +36,7 @@ enum CloudProvider: String, Codable, CaseIterable, Identifiable {
             return "Free (Rate Limited)"
         }
     }
-    
+
     var defaultModel: String {
         switch self {
         case .openai:
