@@ -15,94 +15,25 @@ enum AudioTestHelper {
             AVLinearPCMIsFloatKey: false
         ]
 
-        guard let writer = try? AVAssetWriter(outputURL: audioFileURL, fileType: .wav),
-              let input = try? AVAssetWriterInput(mediaType: .audio, outputSettings: settings) else {
-            throw NSError(domain: "AudioTestHelper", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to create asset writer"])
+        let audioFile = try AVAudioFile(forWriting: audioFileURL, settings: settings)
+        let format = audioFile.processingFormat
+        let frameCount = AVAudioFrameCount(duration * format.sampleRate)
+
+        guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) else {
+            throw NSError(domain: "AudioTestHelper", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to create PCM buffer"])
         }
 
-        writer.add(input)
-        writer.startWriting()
-        writer.startSession(atSourceTime: .zero)
+        buffer.frameLength = frameCount
 
-        let samplesPerSecond = 44100
-        let totalSamples = Int(duration * Double(samplesPerSecond))
-        let bufferSize = 1024
-
-        let format = AVAudioFormat(settings: settings)!
-
-        input.requestMediaDataWhenReady(on: DispatchQueue(label: "AudioGeneration")) {
-            var currentSample = 0
-
-            while input.isReadyForMoreMediaData && currentSample < totalSamples {
-                let samplesToRead = min(bufferSize, totalSamples - currentSample)
-
-                if let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(samplesToRead)) {
-                    buffer.frameLength = AVAudioFrameCount(samplesToRead)
-
-                    if let channelData = buffer.int16ChannelData {
-                        let channelPointer = channelData[0]
-                        for index in 0..<Int(buffer.frameLength) {
-                            // Generate a simple silent buffer (all zeros) for testing
-                            channelPointer[index] = 0
-                        }
-                    }
-
-                    input.append(buffer.toCMSampleBuffer(presentationTime: CMTime(value: CMTimeValue(currentSample), timescale: 44100))!)
-                    currentSample += samplesToRead
-                }
+        // Fill with silence
+        if let channelData = buffer.int16ChannelData {
+            let channelPointer = channelData[0]
+            for index in 0..<Int(frameCount) {
+                channelPointer[index] = 0
             }
-
-            input.markAsFinished()
-            writer.finishWriting {}
         }
 
-        // Wait for file to establish
-        var attempts = 0
-        while !FileManager.default.fileExists(atPath: audioFileURL.path) && attempts < 10 {
-            Thread.sleep(forTimeInterval: 0.1)
-            attempts += 1
-        }
-
+        try audioFile.write(from: buffer)
         return audioFileURL
-    }
-}
-
-extension AVAudioPCMBuffer {
-    func toCMSampleBuffer(presentationTime: CMTime) -> CMSampleBuffer? {
-        var status: OSStatus = noErr
-        var sampleBuffer: CMSampleBuffer?
-
-        var timing = CMSampleTimingInfo(
-            duration: CMTime(value: 1, timescale: 44100),
-            presentationTimeStamp: presentationTime,
-            decodeTimeStamp: .invalid
-        )
-
-        status = CMSampleBufferCreate(
-            allocator: kCFAllocatorDefault,
-            dataBuffer: nil,
-            dataReady: false,
-            makeDataReadyCallback: nil,
-            refcon: nil,
-            formatDescription: format.formatDescription,
-            sampleCount: CMItemCount(frameLength),
-            sampleTimingEntryCount: 1,
-            sampleTimingArray: &timing,
-            sampleSizeEntryCount: 0,
-            sampleSizeArray: nil,
-            sampleBufferOut: &sampleBuffer
-        )
-
-        guard status == noErr, let buffer = sampleBuffer else { return nil }
-
-        let status2 = CMSampleBufferSetDataBufferFromAudioBufferList(
-            buffer,
-            blockBufferAllocator: kCFAllocatorDefault,
-            blockBufferMemoryAllocator: kCFAllocatorDefault,
-            flags: 0,
-            bufferList: audioBufferList
-        )
-
-        return status2 == noErr ? buffer : nil
     }
 }

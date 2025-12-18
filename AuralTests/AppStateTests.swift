@@ -37,10 +37,10 @@ final class AppStateTests: XCTestCase {
 
     func testTranscriptionModePersistence() {
         appState.transcriptionMode = .local
-        XCTAssertEqual(UserDefaults.standard.string(forKey: UserDefaultsKeys.transcriptionMode), "local")
+        XCTAssertEqual(UserDefaults.standard.string(forKey: UserDefaultsKeys.transcriptionMode), "Local")
 
         appState.transcriptionMode = .cloud
-        XCTAssertEqual(UserDefaults.standard.string(forKey: UserDefaultsKeys.transcriptionMode), "cloud")
+        XCTAssertEqual(UserDefaults.standard.string(forKey: UserDefaultsKeys.transcriptionMode), "Cloud")
     }
 
     /*
