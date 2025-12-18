@@ -40,31 +40,39 @@ final class VoiceCommandProcessor {
         range: Range<String.Index>
     ) -> String {
         var result = text
+        
+        // Adjust range to include one adjacent space if it exists, to avoid double spaces
+        var adjustedRange = range
+        if range.lowerBound > result.startIndex && result[result.index(before: range.lowerBound)] == " " {
+            adjustedRange = result.index(before: range.lowerBound)..<range.upperBound
+        } else if range.upperBound < result.endIndex && result[range.upperBound] == " " {
+            adjustedRange = range.lowerBound..<result.index(after: range.upperBound)
+        }
 
         switch command.action {
         case .insertText(let replacement):
-            result = handleInsertText(in: text, range: range, replacement: replacement)
+            result = handleInsertText(in: text, range: adjustedRange, replacement: replacement)
 
         case .newLine:
-            result = handleNewLine(in: text, range: range)
+            result = handleNewLine(in: text, range: adjustedRange)
 
         case .newParagraph:
-            result = handleNewParagraph(in: text, range: range)
+            result = handleNewParagraph(in: text, range: adjustedRange)
 
         case .capitalizeNext:
-            result = handleCapitalizeNext(in: text, range: range)
+            result = handleCapitalizeNext(in: text, range: adjustedRange)
 
         case .uppercaseNext:
-            result = handleUppercaseNext(in: text, range: range)
+            result = handleUppercaseNext(in: text, range: adjustedRange)
 
         case .lowercaseNext:
-            result = handleLowercaseNext(in: text, range: range)
+            result = handleLowercaseNext(in: text, range: adjustedRange)
 
         case .deleteLastWord:
-            result = handleDeleteLastWord(in: text, range: range)
+            result = handleDeleteLastWord(in: text, range: adjustedRange)
 
         case .deleteLastSentence:
-            result = handleDeleteLastSentence(in: text, range: range)
+            result = handleDeleteLastSentence(in: text, range: adjustedRange)
         }
 
         return result
@@ -236,8 +244,14 @@ final class VoiceCommandProcessor {
         var workingText = String(prefix).trimmingCharacters(in: .whitespaces)
 
         let sentenceEnders = CharacterSet(charactersIn: ".!?")
-        if let lastSentenceIndex = workingText.unicodeScalars.lastIndex(where: { sentenceEnders.contains($0) }) {
-            workingText = String(workingText[...lastSentenceIndex])
+        
+        if let lastEnderIdx = workingText.unicodeScalars.lastIndex(where: { sentenceEnders.contains($0) }) {
+            let remainingText = workingText[..<lastEnderIdx]
+            if let secondToLastEnderIdx = remainingText.unicodeScalars.lastIndex(where: { sentenceEnders.contains($0) }) {
+                workingText = String(workingText[...secondToLastEnderIdx])
+            } else {
+                workingText = ""
+            }
         } else {
             workingText = ""
         }
