@@ -40,8 +40,18 @@ enum AudioTestHelper {
                     buffer.frameLength = AVAudioFrameCount(samplesToRead)
                     // Write silence (zeros)
                     if let channelData = buffer.int16ChannelData {
-                        for i in 0..<Int(buffer.frameLength) {
-                            channelData[0][i] = 0
+                        // The original code was channelData[0][i] = 0.
+                        // The instruction implies a change to channelData[index] for a single channel.
+                        // To make it syntactically correct and match the provided snippet's structure,
+                        // we assume channelData[0] is the target pointer for the single channel.
+                        let channelPointer = channelData[0]
+                        let frequency: Float = 440.0 // Example frequency for sine wave
+                        let sampleRate: Float = Float(samplesPerSecond)
+
+                        for index in 0..<Int(buffer.frameLength) {
+                            let sampleValue = sin(2.0 * Float.pi * frequency * Float(index + currentSample) / sampleRate)
+                            // Scale float sample to Int16 range
+                            channelPointer[index] = Int16(sampleValue * Float(Int16.max))
                         }
                     }
                     

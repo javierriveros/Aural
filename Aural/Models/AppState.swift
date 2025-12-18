@@ -88,13 +88,12 @@ final class AppState {
         didSet { UserDefaults.standard.set(selectedCloudProvider.rawValue, forKey: UserDefaultsKeys.selectedCloudProvider) }
     }
     
-    var selectedModelId: String? = nil {
+    var selectedModelId: String? {
         didSet { 
             UserDefaults.standard.set(selectedModelId, forKey: UserDefaultsKeys.selectedModelId)
             preloadCurrentProvider()
         }
     }
-
 
 
     init(

@@ -1,4 +1,4 @@
-// swiftlint:disable identifier_name
+// swiftlint:disable:next identifier_name
 import SwiftUI
 
 // MARK: - Brand Colors

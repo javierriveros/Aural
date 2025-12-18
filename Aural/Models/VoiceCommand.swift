@@ -14,6 +14,12 @@ struct VoiceCommand {
     }
 }
 
+struct CommandMatch {
+    let command: VoiceCommand
+    let trigger: String
+    let range: Range<String.Index>
+}
+
 // MARK: - Command Action
 
 enum CommandAction {
@@ -74,21 +80,39 @@ enum VoiceCommandRegistry {
         VoiceCommand(triggers: ["delete sentence", "scratch sentence"], action: .deleteLastSentence)
     ]
 
-    static func findCommand(in text: String) -> (command: VoiceCommand, trigger: String, range: Range<String.Index>)? {
-        let lowercasedText = text.lowercased()
+    private struct CachedTrigger {
+        let command: VoiceCommand
+        let trigger: String
+        let regex: NSRegularExpression
+    }
 
+    private static let cachedTriggers: [CachedTrigger] = {
+        var triggers: [CachedTrigger] = []
         for command in allCommands {
             for trigger in command.triggers {
-                let searchText = command.caseSensitive ? text : lowercasedText
-                let searchTrigger = command.caseSensitive ? trigger : trigger.lowercased()
-
-                if let range = searchText.range(of: "\\b\(NSRegularExpression.escapedPattern(for: searchTrigger))\\b",
-                                                 options: .regularExpression) {
-                    return (command, trigger, range)
+                let pattern = "\\b\(NSRegularExpression.escapedPattern(for: command.caseSensitive ? trigger : trigger.lowercased()))\\b"
+                let options: NSRegularExpression.Options = command.caseSensitive ? [] : [.caseInsensitive]
+                
+                if let regex = try? NSRegularExpression(pattern: pattern, options: options) {
+                    triggers.append(CachedTrigger(
+                        command: command,
+                        trigger: trigger,
+                        regex: regex
+                    ))
                 }
             }
         }
+        return triggers
+    }()
 
+    static func findCommand(in text: String) -> CommandMatch? {
+        for cached in cachedTriggers {
+            let range = NSRange(text.startIndex..., in: text)
+            if let match = cached.regex.firstMatch(in: text, options: [], range: range),
+               let range = Range(match.range, in: text) {
+                return CommandMatch(command: cached.command, trigger: cached.trigger, range: range)
+            }
+        }
         return nil
     }
 }
