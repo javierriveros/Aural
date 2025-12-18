@@ -142,7 +142,7 @@ final class VoiceCommandProcessor {
         }
 
         if searchIndex < result.endIndex {
-            let wordEnd = result[searchIndex...].firstIndex(where: { $0.isWhitespace || $0.isPunctuation }) ?? result.endIndex
+            let wordEnd = result[searchIndex...].firstIndex { $0.isWhitespace || $0.isPunctuation } ?? result.endIndex
             let wordRange = searchIndex..<wordEnd
 
             if !wordRange.isEmpty {
@@ -168,7 +168,7 @@ final class VoiceCommandProcessor {
         }
 
         if searchIndex < result.endIndex {
-            let wordEnd = result[searchIndex...].firstIndex(where: { $0.isWhitespace || $0.isPunctuation }) ?? result.endIndex
+            let wordEnd = result[searchIndex...].firstIndex { $0.isWhitespace || $0.isPunctuation } ?? result.endIndex
             let wordRange = searchIndex..<wordEnd
 
             if !wordRange.isEmpty {
@@ -193,7 +193,7 @@ final class VoiceCommandProcessor {
         }
 
         if searchIndex < result.endIndex {
-            let wordEnd = result[searchIndex...].firstIndex(where: { $0.isWhitespace || $0.isPunctuation }) ?? result.endIndex
+            let wordEnd = result[searchIndex...].firstIndex { $0.isWhitespace || $0.isPunctuation } ?? result.endIndex
             let wordRange = searchIndex..<wordEnd
 
             if !wordRange.isEmpty {

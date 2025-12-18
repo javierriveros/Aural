@@ -35,10 +35,11 @@ final class LocalParakeetService: TranscriptionProvider {
             let selectedId = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedModelId)
 
             // downloadAndLoad handles lazy loading and caching internally
-            self.models = try await AsrModels.downloadAndLoad(version: selectedId == "parakeet-tdt-v3" ? .v3 : .v2)
+            let loadedModels = try await AsrModels.downloadAndLoad(version: selectedId == "parakeet-tdt-v3" ? .v3 : .v2)
+            self.models = loadedModels
 
             let manager = AsrManager(config: .default)
-            try await manager.initialize(models: self.models!)
+            try await manager.initialize(models: loadedModels)
 
             self.asrManager = manager
         } catch {

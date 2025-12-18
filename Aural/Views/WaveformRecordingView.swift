@@ -72,9 +72,7 @@ struct WaveformRecordingView: View {
         .shadow(color: Color.black.opacity(0.06), radius: 16, x: 0, y: 8)
         .padding(24)  // Add padding so shadow has room to render
         .contentShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
-        .onTapGesture {
-            onTap()
-        }
+        .onTapGesture { onTap() }
         .onAppear {
             withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
                 pulseAnimation = true
@@ -107,9 +105,8 @@ struct WaveformRecordingView: View {
         isLocked: false,
         audioLevels: (0..<60).map { index in
             Float(sin(Double(index) * 0.3) * 0.5 + 0.5)
-        },
-        onTap: {}
-    )
+        }
+    ) {}
     .padding(40)
     .frame(width: 500, height: 250)
 }
@@ -120,9 +117,8 @@ struct WaveformRecordingView: View {
         isLocked: true,
         audioLevels: (0..<60).map { index in
             Float(sin(Double(index) * 0.2) * 0.4 + 0.6)
-        },
-        onTap: {}
-    )
+        }
+    ) {}
     .padding(40)
     .frame(width: 500, height: 250)
 }
