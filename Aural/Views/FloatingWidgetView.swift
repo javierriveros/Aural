@@ -69,16 +69,14 @@ struct FloatingWidgetView: View {
                     lineWidth: 1
                 )
         )
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
         .shadow(
-            color: isRecording ? BrandColors.primaryBlue.opacity(0.2) : .black.opacity(0.15),
-            radius: isRecording ? 16 : 8,
+            color: isRecording ? BrandColors.primaryBlue.opacity(0.15) : .black.opacity(0.1),
+            radius: isRecording ? 8 : 4,
             x: 0,
-            y: 4
+            y: 2
         )
         .compositingGroup()
         .padding(20)
-        .contentShape(RoundedRectangle(cornerRadius: CornerRadius.md))
         .onTapGesture {
             onTap()
         }

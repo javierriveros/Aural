@@ -14,7 +14,7 @@ enum WidgetDisplayMode: String, CaseIterable, Codable, Identifiable {
         case .simple:
             return "Compact widget with mic icon"
         case .waveform:
-            return "Animated sound waves during recording"
+            return "Animated orb visualizer during recording"
         }
     }
 

@@ -155,12 +155,6 @@ struct TranscriptionRow: View {
                         )
                 )
         )
-        .shadow(
-            color: isHovered ? BrandColors.primaryBlue.opacity(0.15) : .black.opacity(0.05),
-            radius: isHovered ? 12 : 4,
-            x: 0,
-            y: isHovered ? 6 : 2
-        )
         .onHover { hovering in
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                 isHovered = hovering
@@ -182,8 +176,6 @@ struct TranscriptionRow: View {
         if cost <= 0 {
             return "Free"
         }
-        // Always show actual cost, even if very small
-        // Use 4 decimal places for precise tracking of small costs
         if cost < 0.01 {
             return String(format: "$%.4f", cost)
         }
