@@ -3,7 +3,7 @@ import SwiftUI
 
 final class WaveformWindowController {
     private var panel: NSPanel?
-    private var hostingView: NSHostingView<WaveformRecordingView>?
+    private var hostingView: NSHostingView<OrbRecordingView>?
     private var levelMonitor: AudioLevelMonitor?
     var onTap: (() -> Void)?
 
@@ -16,19 +16,17 @@ final class WaveformWindowController {
     }
 
     private func setupPanel() {
-        // Create initial content view (will be updated when shown)
-        let contentView = WaveformRecordingView(
+        let contentView = OrbRecordingView(
             duration: 0,
             isLocked: false,
-            audioLevels: Array(repeating: 0.0, count: 60)
+            audioLevel: 0.0
         ) { [weak self] in
             self?.onTap?()
         }
         let hostingView = NSHostingView(rootView: contentView)
 
-        // Create panel with larger size for waveform display (includes padding for shadow)
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 548, height: 308),
+            contentRect: NSRect(x: 0, y: 0, width: 480, height: 460),
             styleMask: [.nonactivatingPanel, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -37,9 +35,9 @@ final class WaveformWindowController {
         panel.level = .floating
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.isFloatingPanel = true
-        panel.isMovableByWindowBackground = true  // Allow dragging
+        panel.isMovableByWindowBackground = true
         panel.backgroundColor = .clear
-        panel.hasShadow = false  // Disable NSPanel shadow, use SwiftUI shadow instead
+        panel.hasShadow = false
         panel.titleVisibility = .hidden
         panel.titlebarAppearsTransparent = true
         panel.isOpaque = false
@@ -54,10 +52,8 @@ final class WaveformWindowController {
 
         self.levelMonitor = levelMonitor
 
-        // Update content with current state
         updateState(duration: duration, isLocked: isLocked)
 
-        // Position at center of screen
         if !panel.isVisible {
             positionPanelAtCenter()
         }
@@ -73,13 +69,12 @@ final class WaveformWindowController {
     func updateState(duration: TimeInterval, isLocked: Bool) {
         guard let hostingView = hostingView else { return }
 
-        // Get current audio levels from monitor
-        let audioLevels = levelMonitor?.recentLevels ?? Array(repeating: 0.0, count: 60)
+        let audioLevel = levelMonitor?.currentLevel ?? 0.0
 
-        hostingView.rootView = WaveformRecordingView(
+        hostingView.rootView = OrbRecordingView(
             duration: duration,
             isLocked: isLocked,
-            audioLevels: audioLevels
+            audioLevel: audioLevel
         ) { [weak self] in
             self?.onTap?()
         }
@@ -91,7 +86,6 @@ final class WaveformWindowController {
         let screenFrame = screen.visibleFrame
         let panelSize = panel.frame.size
 
-        // Center horizontally and vertically
         let xPos = screenFrame.midX - (panelSize.width / 2)
         let yPos = screenFrame.midY - (panelSize.height / 2)
 
