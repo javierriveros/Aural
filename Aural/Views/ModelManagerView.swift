@@ -39,6 +39,9 @@ struct ModelManagerView: View {
                     }
                 }
             }
+            .onAppear {
+                appState.refreshParakeetModelStatuses()
+            }
         }
         .frame(minWidth: 500, minHeight: 600)
     }
@@ -125,18 +128,45 @@ struct ModelRow: View {
     @ViewBuilder
     private var actionButton: some View {
         if model.managedBySDK {
-            // SDK managed models (like Parakeet via FluidAudio) handle their own downloading
-            // lazily when initialized.
-            HStack(spacing: 8) {
-                Label("Auto-Managed", systemImage: "bolt.badge.automatic")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+            let isSDKDownloading = appState.modelDownloadManager.isParakeetModelDownloading(model.id)
+            let isSDKDownloaded = appState.modelDownloadManager.isParakeetModelDownloaded(model.id)
 
-                Button(isSelected ? "Selected" : "Select") {
-                    appState.selectedModelId = model.id
+            HStack(spacing: 8) {
+                if isSDKDownloading {
+                    VStack(alignment: .trailing, spacing: 2) {
+                        ProgressView()
+                            .progressViewStyle(.linear)
+                            .frame(width: 80)
+                        Text("Downloading...")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                } else if isSDKDownloaded {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                    Text("Ready")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+
+                    Button(isSelected ? "Selected" : "Select") {
+                        appState.selectedModelId = model.id
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(isSelected)
+                } else {
+                    Button {
+                        if let parakeetService = appState.localParakeetService {
+                            appState.modelDownloadManager.downloadParakeetModel(model.id, using: parakeetService)
+                        }
+                    } label: {
+                        Label("Download", systemImage: "icloud.and.arrow.down")
+                    }
+                    .buttonStyle(.bordered)
+
+                    Text(model.size)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                 }
-                .buttonStyle(.bordered)
-                .disabled(isSelected)
             }
         } else if isDownloading {
             // Show progress with cancel button
