@@ -7,6 +7,11 @@ final class ModelDownloadManager: NSObject {
     private(set) var downloadProgress: [String: Double] = [:]
     private var modelIdForTask: [Int: String] = [:] // Task identifier to model ID mapping
 
+    // SDK-managed model state (Parakeet)
+    private(set) var sdkDownloadInProgress: [String: Bool] = [:]
+    private(set) var sdkDownloadError: [String: Error?] = [:]
+    private(set) var sdkModelDownloaded: [String: Bool] = [:]
+
     override init() {
         super.init()
         let config = URLSessionConfiguration.default
@@ -84,6 +89,48 @@ final class ModelDownloadManager: NSObject {
         } catch {
             print("Failed to move downloaded model: \(error)")
             downloadProgress.removeValue(forKey: modelId)
+        }
+    }
+
+    func isParakeetModelDownloading(_ modelId: String) -> Bool {
+        sdkDownloadInProgress[modelId] == true
+    }
+
+    func isParakeetModelDownloaded(_ modelId: String) -> Bool {
+        sdkModelDownloaded[modelId] == true
+    }
+
+    func refreshParakeetModelStatus(_ modelId: String, using service: LocalParakeetService) {
+        sdkModelDownloaded[modelId] = service.isModelDownloaded(modelId: modelId)
+    }
+
+    func downloadParakeetModel(_ modelId: String, using service: LocalParakeetService) {
+        guard sdkDownloadInProgress[modelId] != true else { return }
+
+        if service.isModelDownloaded(modelId: modelId) {
+            sdkModelDownloaded[modelId] = true
+            return
+        }
+
+        sdkDownloadInProgress[modelId] = true
+        sdkDownloadError[modelId] = nil
+
+        Task {
+            do {
+                try await service.downloadModel(modelId: modelId)
+                await MainActor.run {
+                    self.sdkDownloadInProgress[modelId] = false
+                    self.sdkDownloadError[modelId] = nil
+                    self.sdkModelDownloaded[modelId] = true
+                }
+            } catch {
+                await MainActor.run {
+                    self.sdkDownloadInProgress[modelId] = false
+                    self.sdkDownloadError[modelId] = error
+                    self.sdkModelDownloaded[modelId] = false
+                    print("Failed to download Parakeet model \(modelId): \(error)")
+                }
+            }
         }
     }
 }

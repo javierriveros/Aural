@@ -21,7 +21,7 @@ final class AppState {
     private(set) var openAIService = OpenAIService()
     private(set) var groqService = GroqService()
     private var localWhisperService: LocalWhisperService?
-    private var localParakeetService: LocalParakeetService?
+    private(set) var localParakeetService: LocalParakeetService?
 
     var modelContext: ModelContext?
 
@@ -132,6 +132,7 @@ final class AppState {
         }
         updateFloatingWidgetVisibility()
         preloadCurrentProvider()
+        refreshParakeetModelStatuses()
     }
 
     private func setupFloatingWidgetCallbacks() {
@@ -532,6 +533,22 @@ final class AppState {
             if let provider = try? getTranscriptionProvider() {
                 await provider.preload()
             }
+
+            // Pre-download Parakeet models when selected
+            if transcriptionMode == .local,
+               let modelId = selectedModelId,
+               let model = ModelRegistry.model(forId: modelId),
+               model.family == .parakeet,
+               let parakeetService = localParakeetService {
+                modelDownloadManager.downloadParakeetModel(modelId, using: parakeetService)
+            }
+        }
+    }
+
+    func refreshParakeetModelStatuses() {
+        guard let parakeetService = localParakeetService else { return }
+        for model in ModelRegistry.models where model.family == .parakeet {
+            modelDownloadManager.refreshParakeetModelStatus(model.id, using: parakeetService)
         }
     }
 

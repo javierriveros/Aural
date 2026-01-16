@@ -14,6 +14,17 @@ final class LocalParakeetService: TranscriptionProvider {
         self.modelDownloadManager = modelDownloadManager
     }
 
+    func isModelDownloaded(modelId: String) -> Bool {
+        let version: AsrModelVersion = modelId == "parakeet-tdt-v3" ? .v3 : .v2
+        let cacheDir = AsrModels.defaultCacheDirectory(for: version)
+        return AsrModels.modelsExist(at: cacheDir, version: version)
+    }
+
+    func downloadModel(modelId: String) async throws {
+        let version: AsrModelVersion = modelId == "parakeet-tdt-v3" ? .v3 : .v2
+        _ = try await AsrModels.download(version: version)
+    }
+
     var isAvailable: Bool {
         // Assume availability if selected; FluidAudio handles specific HW requirements
         return true
