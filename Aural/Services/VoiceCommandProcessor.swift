@@ -11,7 +11,16 @@ final class VoiceCommandProcessor {
         var result = text
         var previousLength = result.count
 
+        var iterations = 0
+        let maxIterations = 100
+
         while true {
+            iterations += 1
+            if iterations > maxIterations {
+                print("Warning: VoiceCommandProcessor reached max iterations. Possible infinite loop detected.")
+                break
+            }
+
             guard let match = VoiceCommandRegistry.findCommand(in: result) else {
                 break
             }
