@@ -424,8 +424,7 @@ struct SettingsView: View {
             }
         }
         .sheet(isPresented: $showFillerManager) {
-            Text("Filler Words Manager Coming Soon")
-                .presentationDetents([.medium])
+            FillerWordsManagementView(configuration: $fillerConfig)
         }
     }
 

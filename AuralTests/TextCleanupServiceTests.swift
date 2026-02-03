@@ -8,16 +8,12 @@ final class TextCleanupServiceTests: XCTestCase {
 
   override func setUp() {
     super.setUp()
-    // Use a unique suite for each test run to ensure isolation
     userDefaults = UserDefaults(suiteName: "TextCleanupTests-\(UUID().uuidString)")!
     repository = FillerWordsRepository(userDefaults: userDefaults)
     service = TextCleanupService(fillerRepository: repository)
 
-    // Setup initial clean state
     let config = FillerWordsConfiguration(isEnabled: true)
     repository.save(config)
-    // Stutter uses standard user defaults in service (logic not refactored yet)
-    // For now we test stutter logic using standard defaults (less critical to isolate as it is simple bool)
     UserDefaults.standard.set(true, forKey: UserDefaultsKeys.removeStuttering)
   }
 
@@ -98,9 +94,6 @@ final class TextCleanupServiceTests: XCTestCase {
   func testDisabledFillerRemoval() {
     let config = FillerWordsConfiguration(isEnabled: false)
     repository.save(config)
-    
-    // Create new service to pick up changes if necessary, though repository reference is same
-    // With our DI, repository.load() calls userDefaults directly so it should pick it up immediately
     
     let input = "I um want to test"
     let result = service.removeFillerWords(from: input)
