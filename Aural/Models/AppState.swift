@@ -15,6 +15,7 @@ final class AppState {
     let voiceCommandProcessor = VoiceCommandProcessor()
     let textInjectionService = TextInjectionService()
     let vocabularyService = VocabularyService()
+    let textCleanupService = TextCleanupService()
 
     private let floatingWidget = FloatingWidgetController()
     private let waveformWindow = WaveformWindowController()
@@ -116,7 +117,8 @@ final class AppState {
             UserDefaultsKeys.audioSpeedMultiplier: 1.0,
             UserDefaultsKeys.textInjectionEnabled: false,
             UserDefaultsKeys.transcriptionMode: TranscriptionMode.cloud.rawValue,
-            UserDefaultsKeys.selectedCloudProvider: CloudProvider.openai.rawValue
+            UserDefaultsKeys.selectedCloudProvider: CloudProvider.openai.rawValue,
+            UserDefaultsKeys.removeStuttering: false
         ])
 
         self.localWhisperService = LocalWhisperService(modelDownloadManager: modelDownloadManager)
@@ -337,7 +339,8 @@ final class AppState {
 
             let provider = try getTranscriptionProvider()
             let rawTranscription = try await provider.transcribe(audioURL: processedURL)
-            let withVocabulary = vocabularyService.applyWordBoundaryReplacements(to: rawTranscription)
+            let cleanedText = textCleanupService.cleanup(rawTranscription)
+            let withVocabulary = vocabularyService.applyWordBoundaryReplacements(to: cleanedText)
             let transcriptionText = voiceCommandProcessor.process(withVocabulary)
             lastTranscription = transcriptionText
 

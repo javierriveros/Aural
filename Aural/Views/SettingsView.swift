@@ -31,6 +31,11 @@ struct SettingsView: View {
     @State private var voiceCommandsEnabled = false
     @State private var keyboardShortcuts = KeyboardShortcutsConfiguration.default
 
+    // MARK: - Text Cleanup
+    @State private var fillerConfig = FillerWordsConfiguration()
+    @State private var removeStuttering = false
+    @State private var showFillerManager = false
+
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: Spacing.md) {
@@ -284,6 +289,39 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Toggle("Remove Filler Words", isOn: $fillerConfig.isEnabled)
+                        .toggleStyle(.switch)
+
+                    Text("Remove sounds like 'um', 'uh', 'er' from transcriptions.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    HStack {
+                        Text("\(fillerConfig.words.count) filler words")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        Spacer()
+
+                        Button("Manage") {
+                            showFillerManager = true
+                        }
+                        .buttonStyle(PrimaryButtonStyle())
+                        .controlSize(.small)
+                    }
+
+                    Toggle("Remove Stuttering", isOn: $removeStuttering)
+                        .toggleStyle(.switch)
+
+                    Text("Remove repeated consecutive words (e.g., 'I I want' → 'I want').")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } header: {
+                    Text("Text Cleanup")
+                        .font(.headline)
+                }
+
+                Section {
                     Toggle("Enable Keyboard Shortcuts", isOn: $keyboardShortcuts.isEnabled)
                         .toggleStyle(.switch)
 
@@ -385,6 +423,10 @@ struct SettingsView: View {
                 .padding()
             }
         }
+        .sheet(isPresented: $showFillerManager) {
+            Text("Filler Words Manager Coming Soon")
+                .presentationDetents([.medium])
+        }
     }
 
     private func loadSettings() {
@@ -405,6 +447,8 @@ struct SettingsView: View {
         customVocabulary = VocabularyRepository().load()
         voiceCommandsEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.voiceCommandsEnabled)
         keyboardShortcuts = KeyboardShortcutsRepository().load()
+        fillerConfig = FillerWordsRepository().load()
+        removeStuttering = UserDefaults.standard.bool(forKey: UserDefaultsKeys.removeStuttering)
     }
 
     private func migrateAPIKeyFromUserDefaults() {
@@ -440,6 +484,9 @@ struct SettingsView: View {
 
         KeyboardShortcutsRepository().save(keyboardShortcuts)
         appState.shortcutManager.updateConfiguration(keyboardShortcuts)
+
+        FillerWordsRepository().save(fillerConfig)
+        UserDefaults.standard.set(removeStuttering, forKey: UserDefaultsKeys.removeStuttering)
     }
 
     func testAPIKey() {
