@@ -21,6 +21,8 @@ enum UserDefaultsKeys {
     static let selectedModelId = "selected_model_id"
     static let selectedCloudProvider = "selected_cloud_provider"
     static let downloadedModels = "downloaded_models"
+    static let fillerWordsConfiguration = "filler_words_configuration"
+    static let removeStuttering = "remove_stuttering"
 }
 
 // MARK: - Audio Settings
