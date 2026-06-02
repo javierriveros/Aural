@@ -36,6 +36,10 @@ final class AppState {
     /// The UI observes this to prompt the user to (re)run setup.
     var requiresSetup = false
 
+    /// Drives the Settings sheet. Lives here so menu commands (⌘,) and
+    /// keyboard shortcuts can open Settings, not just the in-window button.
+    var showSettings = false
+
     /// Whether the user has finished the first-run setup flow.
     var hasCompletedSetup: Bool {
         get { UserDefaults.standard.bool(forKey: UserDefaultsKeys.hasCompletedSetup) }
@@ -148,7 +152,7 @@ final class AppState {
         UserDefaults.standard.register(defaults: [
             UserDefaultsKeys.showFloatingWidget: true,
             UserDefaultsKeys.audioSpeedMultiplier: 1.0,
-            UserDefaultsKeys.textInjectionEnabled: false,
+            UserDefaultsKeys.textInjectionEnabled: true,
             UserDefaultsKeys.transcriptionMode: TranscriptionMode.cloud.rawValue,
             UserDefaultsKeys.selectedCloudProvider: CloudProvider.openai.rawValue,
             UserDefaultsKeys.removeStuttering: false
@@ -224,7 +228,7 @@ final class AppState {
             case .showHideWindow:
                 NSApp.activate(ignoringOtherApps: true)
             case .openSettings:
-                break
+                showSettings = true
             case .clearHistory:
                 guard let context = modelContext else { return }
                 do {

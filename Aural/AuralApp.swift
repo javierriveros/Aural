@@ -49,5 +49,13 @@ struct AuralApp: App {
         .modelContainer(sharedModelContainer)
         .windowResizability(.contentMinSize)
         .defaultSize(width: 600, height: 780)
+        .commands {
+            CommandGroup(replacing: .appSettings) {
+                Button("Settings…") {
+                    appState.showSettings = true
+                }
+                .keyboardShortcut(",", modifiers: .command)
+            }
+        }
     }
 }

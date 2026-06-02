@@ -33,6 +33,7 @@ final class AppStateTests: XCTestCase {
         XCTAssertEqual(appState.selectedCloudProvider, .openai)
         XCTAssertTrue(appState.showFloatingWidget)
         XCTAssertEqual(appState.audioSpeedMultiplier, 1.0)
+        XCTAssertTrue(appState.textInjectionEnabled)
     }
 
     func testTranscriptionModePersistence() {

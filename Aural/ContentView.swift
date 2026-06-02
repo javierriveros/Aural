@@ -13,12 +13,12 @@ struct ContentView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transcription.timestamp, order: .reverse) private var transcriptions: [Transcription]
-    @State private var showSettings = false
     @State private var showSetup = false
     @State private var permissionCheckTimer: Timer?
 
     var body: some View {
-        VStack(spacing: 20) {
+        @Bindable var appState = appState
+        return VStack(spacing: 20) {
             RecordingIndicatorView(
                 isRecording: appState.audioRecorder.state == .recording,
                 isLocked: appState.isRecordingLocked,
@@ -204,13 +204,13 @@ struct ContentView: View {
         .toolbar {
             ToolbarItem {
                 Button {
-                    showSettings = true
+                    appState.showSettings = true
                 } label: {
                     Label("Settings", systemImage: "gear")
                 }
             }
         }
-        .sheet(isPresented: $showSettings) {
+        .sheet(isPresented: $appState.showSettings) {
             SettingsView()
         }
         .sheet(isPresented: $showSetup) {
