@@ -31,6 +31,39 @@ final class AppState {
     private(set) var isTranscribing = false
     private(set) var lastTranscription: String?
     private(set) var lastError: String?
+
+    /// Set when the user attempts to record before transcription is configured.
+    /// The UI observes this to prompt the user to (re)run setup.
+    var requiresSetup = false
+
+    /// Whether the user has finished the first-run setup flow.
+    var hasCompletedSetup: Bool {
+        get { UserDefaults.standard.bool(forKey: UserDefaultsKeys.hasCompletedSetup) }
+        set { UserDefaults.standard.set(newValue, forKey: UserDefaultsKeys.hasCompletedSetup) }
+    }
+
+    /// Whether the currently selected transcription mode is usable right now:
+    /// a cloud provider with a non-empty key, or a downloaded+selected local model.
+    var isTranscriptionConfigured: Bool {
+        switch transcriptionMode {
+        case .cloud:
+            let key: String?
+            switch selectedCloudProvider {
+            case .openai: key = openAIService.apiKey
+            case .groq: key = groqService.apiKey
+            }
+            return !(key ?? "").isEmpty
+        case .local:
+            guard let modelId = selectedModelId,
+                  let model = ModelRegistry.model(forId: modelId) else {
+                return false
+            }
+            if model.managedBySDK {
+                return modelDownloadManager.isParakeetModelDownloaded(modelId)
+            }
+            return modelDownloadManager.isModelDownloaded(model)
+        }
+    }
     private var recordingURL: URL?
     private var recordingStartTime: Date?
     private var widgetUpdateTimer: Timer?
@@ -252,8 +285,19 @@ final class AppState {
         }
     }
 
+    /// Returns false and flags `requiresSetup` if transcription can't run yet.
+    private func ensureTranscriptionConfigured() -> Bool {
+        guard isTranscriptionConfigured else {
+            requiresSetup = true
+            updateFloatingWidget()
+            return false
+        }
+        return true
+    }
+
     private func startRecording() {
         guard !isRecording else { return }
+        guard ensureTranscriptionConfigured() else { return }
         soundPlayer.playRecordingStart()
         audioLevelMonitor.reset()
 
@@ -275,6 +319,7 @@ final class AppState {
 
     private func startLockedRecording() {
         guard !isRecording else { return }
+        guard ensureTranscriptionConfigured() else { return }
 
         soundPlayer.playLockEngaged()
         audioLevelMonitor.reset()
@@ -558,5 +603,44 @@ final class AppState {
     deinit {
         hotkeyMonitor.stopMonitoring()
         stopWidgetUpdateTimer()
+    }
+}
+
+// MARK: - Cloud key validation
+
+extension AppState {
+    /// Validates a cloud API key by saving it on the provider's service and
+    /// running a short test transcription. Throws if the key is rejected.
+    func validateCloudKey(provider: CloudProvider, key: String) async throws {
+        let service: TranscriptionProvider
+        switch provider {
+        case .openai:
+            try openAIService.setAPIKey(key)
+            service = openAIService
+        case .groq:
+            try groqService.setAPIKey(key)
+            service = groqService
+        }
+
+        let testAudioURL = try await createTestAudioFile()
+        defer { FileManager.default.safelyRemoveItem(at: testAudioURL) }
+        _ = try await service.transcribe(audioURL: testAudioURL)
+    }
+
+    private func createTestAudioFile() async throws -> URL {
+        let testURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("m4a")
+
+        let recorder = AudioRecorder()
+        _ = try await recorder.startRecording()
+        try await Task.sleep(nanoseconds: 500_000_000)
+
+        guard let recordedURL = recorder.stopRecording() else {
+            throw NSError(domain: "AppState", code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: "Failed to create test audio"])
+        }
+        try FileManager.default.moveItem(at: recordedURL, to: testURL)
+        return testURL
     }
 }

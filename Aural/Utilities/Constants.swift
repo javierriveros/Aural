@@ -23,6 +23,7 @@ enum UserDefaultsKeys {
     static let downloadedModels = "downloaded_models"
     static let fillerWordsConfiguration = "filler_words_configuration"
     static let removeStuttering = "remove_stuttering"
+    static let hasCompletedSetup = "has_completed_setup"
 }
 
 // MARK: - Audio Settings

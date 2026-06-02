@@ -493,23 +493,11 @@ struct SettingsView: View {
         testResult = nil
         showSuccess = false
 
+        let key = selectedCloudProvider == .openai ? apiKey : groqAPIKey
+
         Task {
             do {
-                let provider: TranscriptionProvider
-                if selectedCloudProvider == .openai {
-                    try appState.openAIService.setAPIKey(apiKey)
-                    provider = appState.openAIService
-                } else {
-                    try appState.groqService.setAPIKey(groqAPIKey)
-                    provider = appState.groqService
-                }
-
-                let testAudioURL = try await createTestAudioFile()
-
-                _ = try await provider.transcribe(audioURL: testAudioURL)
-
-                try? FileManager.default.removeItem(at: testAudioURL)
-
+                try await appState.validateCloudKey(provider: selectedCloudProvider, key: key)
                 await MainActor.run {
                     testResult = "API key is valid!"
                     showSuccess = true
@@ -522,23 +510,6 @@ struct SettingsView: View {
                     isTestingAPI = false
                 }
             }
-        }
-    }
-
-    private func createTestAudioFile() async throws -> URL {
-        let testURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString)
-            .appendingPathExtension("m4a")
-
-        let audioRecorder = AudioRecorder()
-        _ = try await audioRecorder.startRecording()
-        try await Task.sleep(nanoseconds: 500_000_000)
-
-        if let recordedURL = audioRecorder.stopRecording() {
-            try FileManager.default.moveItem(at: recordedURL, to: testURL)
-            return testURL
-        } else {
-            throw NSError(domain: "SettingsView", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to create test audio"])
         }
     }
 }

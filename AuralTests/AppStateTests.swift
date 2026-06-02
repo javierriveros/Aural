@@ -67,4 +67,50 @@ final class AppStateTests: XCTestCase {
         XCTAssertIdentical(appState.audioRecorder, audioRecorderMock)
         XCTAssertIdentical(appState.audioProcessor, audioProcessorMock)
     }
+
+    // MARK: - Transcription configuration
+
+    func testCloudNotConfiguredWithoutKey() {
+        appState.transcriptionMode = .cloud
+        appState.selectedCloudProvider = .openai
+        XCTAssertFalse(appState.isTranscriptionConfigured)
+    }
+
+    func testCloudConfiguredWithKey() throws {
+        appState.transcriptionMode = .cloud
+        appState.selectedCloudProvider = .openai
+        try appState.openAIService.setAPIKey("sk-test-key")
+        XCTAssertTrue(appState.isTranscriptionConfigured)
+    }
+
+    func testLocalNotConfiguredWithoutModel() {
+        appState.transcriptionMode = .local
+        appState.selectedModelId = nil
+        XCTAssertFalse(appState.isTranscriptionConfigured)
+    }
+
+    func testLocalNotConfiguredWhenModelNotDownloaded() {
+        appState.transcriptionMode = .local
+        // A valid model id that is not downloaded in the test environment.
+        appState.selectedModelId = "whisper-tiny-en"
+        XCTAssertFalse(appState.isTranscriptionConfigured)
+    }
+
+    // MARK: - Setup flags
+
+    func testRequiresSetupDefaultsFalse() {
+        XCTAssertFalse(appState.requiresSetup)
+    }
+
+    func testHasCompletedSetupRoundTrips() {
+        XCTAssertFalse(appState.hasCompletedSetup)
+
+        appState.hasCompletedSetup = true
+        XCTAssertTrue(appState.hasCompletedSetup)
+        XCTAssertTrue(UserDefaults.standard.bool(forKey: UserDefaultsKeys.hasCompletedSetup))
+
+        appState.hasCompletedSetup = false
+        XCTAssertFalse(appState.hasCompletedSetup)
+        XCTAssertFalse(UserDefaults.standard.bool(forKey: UserDefaultsKeys.hasCompletedSetup))
+    }
 }
