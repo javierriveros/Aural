@@ -14,6 +14,7 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transcription.timestamp, order: .reverse) private var transcriptions: [Transcription]
     @State private var showSettings = false
+    @State private var showSetup = false
     @State private var permissionCheckTimer: Timer?
 
     var body: some View {
@@ -87,6 +88,27 @@ struct ContentView: View {
             if appState.isTranscribing {
                 ProgressView("Transcribing...")
                     .padding()
+            }
+
+            if appState.requiresSetup {
+                VStack(spacing: 8) {
+                    Text("Transcription isn't set up yet")
+                        .font(.headline)
+                        .foregroundStyle(.orange)
+                    Text("Choose a transcription mode to start recording.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                    Button("Set Up") {
+                        appState.requiresSetup = false
+                        showSetup = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                }
+                .padding()
+                .background(Color.orange.opacity(0.1))
+                .cornerRadius(8)
             }
 
             if let error = appState.lastError {
@@ -191,9 +213,16 @@ struct ContentView: View {
         .sheet(isPresented: $showSettings) {
             SettingsView()
         }
+        .sheet(isPresented: $showSetup) {
+            OnboardingView()
+                .interactiveDismissDisabled(true)
+        }
         .onAppear {
             appState.modelContext = modelContext
             startPermissionCheck()
+            if !appState.hasCompletedSetup {
+                showSetup = true
+            }
         }
         .onDisappear {
             stopPermissionCheck()
