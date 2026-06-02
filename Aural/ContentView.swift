@@ -111,46 +111,49 @@ struct ContentView: View {
                     .padding(.horizontal, 2)
 
                 if transcriptions.isEmpty {
-                    VStack(spacing: Spacing.lg) {
-                        ZStack {
-                            Circle()
-                                .fill(BrandColors.gradientSecondary)
-                                .frame(width: 100, height: 100)
-                                .opacity(0.3)
-                                .blur(radius: 30)
+                    ScrollView {
+                        VStack(spacing: Spacing.lg) {
+                            ZStack {
+                                Circle()
+                                    .fill(BrandColors.gradientSecondary)
+                                    .frame(width: 100, height: 100)
+                                    .opacity(0.3)
+                                    .blur(radius: 30)
 
-                            Circle()
-                                .fill(BrandColors.gradientPrimary)
-                                .frame(width: 80, height: 80)
-                                .overlay(
-                                    Image(systemName: "waveform.badge.mic")
-                                        .font(.system(size: 32, weight: .medium))
-                                        .foregroundStyle(.white)
-                                )
+                                Circle()
+                                    .fill(BrandColors.gradientPrimary)
+                                    .frame(width: 80, height: 80)
+                                    .overlay(
+                                        Image(systemName: "waveform.badge.mic")
+                                            .font(.system(size: 32, weight: .medium))
+                                            .foregroundStyle(.white)
+                                    )
+                            }
+
+                            VStack(spacing: Spacing.xs) {
+                                Text("No transcriptions yet")
+                                    .font(Typography.title2)
+                                    .foregroundStyle(.primary)
+
+                                Text("Start recording to see your transcriptions here")
+                                    .font(Typography.callout)
+                                    .foregroundStyle(.secondary)
+                                    .multilineTextAlignment(.center)
+                            }
+
+                            VStack(alignment: .leading, spacing: Spacing.sm) {
+                                FeatureHighlight(icon: "mic.fill", title: "Voice Recording", description: "Hold your hotkey to record")
+                                FeatureHighlight(icon: "waveform.badge.magnifyingglass", title: "AI Transcription", description: "Powered by Whisper AI")
+                                FeatureHighlight(icon: "doc.on.clipboard", title: "Auto Copy", description: "Text copied to clipboard")
+                            }
+                            .padding(Spacing.md)
+                            .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
+                            .cornerRadius(CornerRadius.md)
                         }
-
-                        VStack(spacing: Spacing.xs) {
-                            Text("No transcriptions yet")
-                                .font(Typography.title2)
-                                .foregroundStyle(.primary)
-
-                            Text("Start recording to see your transcriptions here")
-                                .font(Typography.callout)
-                                .foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
-                        }
-
-                        VStack(alignment: .leading, spacing: Spacing.sm) {
-                            FeatureHighlight(icon: "mic.fill", title: "Voice Recording", description: "Hold your hotkey to record")
-                            FeatureHighlight(icon: "waveform.badge.magnifyingglass", title: "AI Transcription", description: "Powered by Whisper AI")
-                            FeatureHighlight(icon: "doc.on.clipboard", title: "Auto Copy", description: "Text copied to clipboard")
-                        }
-                        .padding(Spacing.md)
-                        .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
-                        .cornerRadius(CornerRadius.md)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, Spacing.xxl)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, Spacing.xxl)
+                    .frame(maxHeight: .infinity)
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 12) {

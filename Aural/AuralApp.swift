@@ -43,11 +43,11 @@ struct AuralApp: App {
         WindowGroup {
             ContentView()
                 .environment(appState)
-                .frame(minWidth: 500, idealWidth: 550, maxWidth: 650,
-                       minHeight: 400, idealHeight: 600, maxHeight: 800)
+                .frame(minWidth: 520, idealWidth: 600,
+                       minHeight: 640, idealHeight: 780)
         }
         .modelContainer(sharedModelContainer)
-        .windowResizability(.contentSize)
-        .defaultSize(width: 550, height: 600)
+        .windowResizability(.contentMinSize)
+        .defaultSize(width: 600, height: 780)
     }
 }
