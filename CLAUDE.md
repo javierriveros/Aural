@@ -42,12 +42,11 @@ A single `@Observable final class AppState` owns all services and orchestrates t
 
 ### Transcription pipeline (`handleRecordingComplete`)
 The post-recording flow is a fixed, ordered pipeline — preserve this order when modifying:
-1. Optional audio speed-up (`AudioProcessor`) to cut API cost
-2. `provider.transcribe(audioURL:)` — provider chosen by `getTranscriptionProvider()`
-3. `TextCleanupService.cleanup` — filler-word / stutter removal
-4. `VocabularyService.applyWordBoundaryReplacements` — custom word replacement
-5. `VoiceCommandProcessor.process` — punctuation/formatting/editing commands
-6. Text injection (`TextInjectionService`, Accessibility-based) with clipboard fallback, then persist a `Transcription` via SwiftData
+1. `provider.transcribe(audioURL:)` — provider chosen by `getTranscriptionProvider()`; cloud providers send the custom vocabulary as the `prompt` hint
+2. `TextCleanupService.cleanup` — filler-word / stutter removal
+3. `VocabularyService.applyWordBoundaryReplacements` — custom word replacement
+4. `VoiceCommandProcessor.process` — punctuation/formatting/editing commands
+5. Text injection (`TextInjectionService`, Accessibility-based) with clipboard fallback, then persist a `Transcription` via SwiftData
 
 ### Provider abstraction (`Aural/Services/TranscriptionProvider.swift`)
 All transcription backends conform to `TranscriptionProvider` (`transcribe(audioURL:) async throws -> String`, `isAvailable`, optional `preload()`). `AppState.getTranscriptionProvider()` selects one based on `TranscriptionMode` (`.cloud`/`.local`) + the chosen `CloudProvider` or `ModelFamily`. To add a backend, implement the protocol and add a branch in `getTranscriptionProvider()` / `getProviderName()` / `calculateCost()`. `preload()` exists so local models can be loaded into memory ahead of first use.

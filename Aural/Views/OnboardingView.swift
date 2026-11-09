@@ -95,6 +95,8 @@ struct OnboardingView: View {
             ) { step = .cloud }
 
             Spacer()
+
+            FnConflictRow(configuration: HotkeyRepository().load())
         }
     }
 

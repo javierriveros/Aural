@@ -19,7 +19,6 @@ struct SettingsView: View {
     @State private var recordingMode: RecordingMode = .holdOnly
     @State private var soundsEnabled = true
     @State private var widgetDisplayMode: WidgetDisplayMode = .waveform
-    @State private var audioSpeedMultiplier: Float = 1.0
     @State private var textInjectionEnabled = false
 
     // MARK: - Hotkey & Vocabulary
@@ -184,32 +183,6 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("Audio Speed:")
-                            Spacer()
-                            Text("\(String(format: "%.1fx", audioSpeedMultiplier))")
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Slider(value: $audioSpeedMultiplier, in: 1.0...2.0, step: 0.1)
-
-                        Text("Speed up audio before transcription to reduce API costs. 1.5x-2.0x recommended.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-
-                        if audioSpeedMultiplier > 1.0 {
-                            Text("Estimated savings: ~\(Int((audioSpeedMultiplier - 1.0) / audioSpeedMultiplier * 100))%")
-                                .font(.caption)
-                                .foregroundStyle(.green)
-                        }
-                    }
-                } header: {
-                    Text("Audio Processing")
-                        .font(.headline)
-                }
-
-                Section {
                     Toggle("Enable Text Injection", isOn: $textInjectionEnabled)
                         .toggleStyle(.switch)
 
@@ -229,6 +202,7 @@ struct SettingsView: View {
 
                 Section {
                     HotkeyRecorderView(configuration: $hotkeyConfig)
+                    FnConflictRow(configuration: hotkeyConfig)
                 } header: {
                     Text("Hotkey Configuration")
                         .font(.headline)
@@ -446,7 +420,6 @@ struct SettingsView: View {
         recordingMode = RecordingModePreferences.mode
         soundsEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.soundsEnabled)
         widgetDisplayMode = appState.widgetDisplayMode
-        audioSpeedMultiplier = appState.audioSpeedMultiplier
         textInjectionEnabled = appState.textInjectionEnabled
         hotkeyConfig = HotkeyRepository().load()
         customVocabulary = VocabularyRepository().load()
@@ -475,12 +448,10 @@ struct SettingsView: View {
 
         RecordingModePreferences.mode = recordingMode
         UserDefaults.standard.set(soundsEnabled, forKey: UserDefaultsKeys.soundsEnabled)
-        UserDefaults.standard.set(audioSpeedMultiplier, forKey: UserDefaultsKeys.audioSpeedMultiplier)
         UserDefaults.standard.set(textInjectionEnabled, forKey: UserDefaultsKeys.textInjectionEnabled)
         UserDefaults.standard.set(voiceCommandsEnabled, forKey: UserDefaultsKeys.voiceCommandsEnabled)
 
         appState.widgetDisplayMode = widgetDisplayMode
-        appState.audioSpeedMultiplier = audioSpeedMultiplier
         appState.textInjectionEnabled = textInjectionEnabled
         appState.hotkeyMonitor.updateHotkey(hotkeyConfig)
 

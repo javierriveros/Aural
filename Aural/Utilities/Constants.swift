@@ -9,7 +9,6 @@ enum UserDefaultsKeys {
     static let groqAPIKey = "groq_api_key"
     static let showFloatingWidget = "show_floating_widget"
     static let widgetDisplayMode = "widget_display_mode"
-    static let audioSpeedMultiplier = "audio_speed_multiplier"
     static let textInjectionEnabled = "text_injection_enabled"
     static let soundsEnabled = "sounds_enabled"
     static let recordingMode = "recording_mode"
@@ -53,11 +52,11 @@ enum TimerConstants {
 // MARK: - API Constants
 
 enum APIConstants {
-    static let whisperAPIURL = "https://api.openai.com/v1/audio/transcriptions"
+    static let openAIAPIURL = "https://api.openai.com/v1/audio/transcriptions"
     static let groqAPIURL = "https://api.groq.com/openai/v1/audio/transcriptions"
-    static let whisperModel = "whisper-1"
+    static let openAIModel = "gpt-4o-mini-transcribe"
     static let groqModel = "whisper-large-v3-turbo"
-    static let whisperPricePerMinute = 0.006
+    static let openAIPricePerMinute = 0.003
     static let groqPricePerMinute = 0.0 // Free for now
 }
 

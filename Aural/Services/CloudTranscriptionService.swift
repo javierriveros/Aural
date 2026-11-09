@@ -1,8 +1,20 @@
 import Foundation
 
-final class OpenAIService: TranscriptionProvider {
-    private let apiURL = URL(string: APIConstants.whisperAPIURL)!
-    private let apiKeyIdentifier = UserDefaultsKeys.openAIAPIKey
+final class CloudTranscriptionService: TranscriptionProvider {
+    private let provider: CloudProvider
+    private let prompt: () -> String
+
+    init(provider: CloudProvider, prompt: @escaping () -> String = { "" }) {
+        self.provider = provider
+        self.prompt = prompt
+    }
+
+    private var apiKeyIdentifier: String {
+        switch provider {
+        case .openai: return UserDefaultsKeys.openAIAPIKey
+        case .groq: return UserDefaultsKeys.groqAPIKey
+        }
+    }
 
     var apiKey: String? {
         UserDefaults.standard.string(forKey: apiKeyIdentifier)
@@ -30,7 +42,7 @@ final class OpenAIService: TranscriptionProvider {
             throw CloudTranscriptionError.invalidURL
         }
 
-        var request = URLRequest(url: apiURL)
+        var request = URLRequest(url: provider.apiEndpoint)
         request.httpMethod = "POST"
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
 
@@ -39,8 +51,12 @@ final class OpenAIService: TranscriptionProvider {
 
         var builder = MultipartFormDataBuilder()
         builder.addFile(name: "file", filename: audioURL.lastPathComponent, mimeType: mimeType, data: audioData)
-        builder.addField(name: "model", value: APIConstants.whisperModel)
+        builder.addField(name: "model", value: provider.defaultModel)
         builder.addField(name: "response_format", value: "json")
+        let hint = prompt()
+        if !hint.isEmpty {
+            builder.addField(name: "prompt", value: hint)
+        }
         builder.finalize()
 
         request.setValue(builder.contentTypeHeader, forHTTPHeaderField: "Content-Type")
@@ -56,7 +72,7 @@ final class OpenAIService: TranscriptionProvider {
             if httpResponse.statusCode == 200 {
                 let decoder = JSONDecoder()
                 let whisperResponse = try decoder.decode(WhisperResponse.self, from: data)
-                return whisperResponse.text
+                return Self.isPromptEcho(whisperResponse.text, prompt: hint) ? "" : whisperResponse.text
             } else {
                 let errorMessage = String(data: data, encoding: .utf8) ?? "Unknown error"
                 throw CloudTranscriptionError.apiError(errorMessage)
@@ -66,5 +82,15 @@ final class OpenAIService: TranscriptionProvider {
         } catch {
             throw CloudTranscriptionError.networkError(error)
         }
+    }
+
+    // Whisper-family models can return the prompt verbatim when the audio has no speech.
+    // Requiring a separator keeps a genuine one-word dictation of the first term.
+    static func isPromptEcho(_ text: String, prompt: String) -> Bool {
+        let punctuation = CharacterSet.whitespacesAndNewlines.union(.punctuationCharacters)
+        let normalize = { (value: String) in value.trimmingCharacters(in: punctuation).lowercased() }
+        let result = normalize(text)
+        let hint = normalize(prompt)
+        return result.contains(",") && hint.hasPrefix(result)
     }
 }

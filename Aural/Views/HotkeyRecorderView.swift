@@ -1,6 +1,38 @@
 import Carbon
 import SwiftUI
 
+// MARK: - Fn Conflict Row
+
+struct FnConflictRow: View {
+    let configuration: HotkeyConfiguration
+    @State private var hasConflict = false
+
+    var body: some View {
+        Group {
+            if hasConflict {
+                HStack(spacing: Spacing.xs) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(BrandColors.warning)
+                    Text("Set “Press 🌐 key to” to “Do Nothing” so Fn doesn't also open emoji or dictation.")
+                        .font(Typography.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Open Keyboard Settings") {
+                        if let url = URL(string: "x-apple.systempreferences:com.apple.Keyboard-Settings.extension") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }
+                }
+            }
+        }
+        .onAppear { hasConflict = configuration.hasFnSystemConflict }
+        .onChange(of: configuration) { _, new in hasConflict = new.hasFnSystemConflict }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            hasConflict = configuration.hasFnSystemConflict
+        }
+    }
+}
+
 // MARK: - Hotkey Recorder View
 
 struct HotkeyRecorderView: View {

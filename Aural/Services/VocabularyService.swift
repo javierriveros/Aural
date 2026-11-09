@@ -12,6 +12,23 @@ final class VocabularyService {
         self.vocabulary = repository.load()
     }
 
+    var transcriptionPrompt: String {
+        guard vocabulary.isEnabled else { return "" }
+        return Self.transcriptionPrompt(from: vocabulary.entries)
+    }
+
+    static func transcriptionPrompt(from entries: [VocabularyEntry], maxLength: Int = 500) -> String {
+        var seen = Set<String>()
+        var result = ""
+        for term in entries.map({ $0.replacement.trimmingCharacters(in: .whitespacesAndNewlines) }) where !term.isEmpty {
+            guard seen.insert(term.lowercased()).inserted else { continue }
+            let next = result.isEmpty ? term : result + ", " + term
+            if next.count > maxLength { break }
+            result = next
+        }
+        return result
+    }
+
     func applyReplacements(to text: String) -> String {
         guard vocabulary.isEnabled else { return text }
 

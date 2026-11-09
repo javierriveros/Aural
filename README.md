@@ -60,8 +60,6 @@ voice commands, and powerful AI transcription.
   - Copy last transcription
   - Show/hide window
   - Clear history
-- **Audio Speed Processing** - Speed up audio before transcription to reduce API
-  costs (1.5x-2.0x recommended)
 
 ### 💾 **Data Management**
 
@@ -90,7 +88,7 @@ voice commands, and powerful AI transcription.
 
 - **macOS 14.0 (Sonoma)** or later
 - **Xcode 15+** (for building from source)
-- **OpenAI API key** with Whisper API access
+- **OpenAI API key** with audio transcription access (gpt-4o-mini-transcribe)
 - **Microphone** access
 - **Accessibility permissions** (for global hotkey monitoring and text
   injection)
@@ -139,8 +137,7 @@ Pre-built binaries will be available on the
 5. Copy the key (you'll need it in the next step)
 6. Ensure you have billing enabled with available credits
 
-> **Note**: Whisper API costs ~$0.006 per minute of audio. Audio speed
-> processing (1.5x-2.0x) can reduce costs by 33-50%.
+> **Note**: OpenAI transcription (`gpt-4o-mini-transcribe`) costs ~$0.003 per minute of audio.
 
 ### 2. Configure API Key
 
@@ -265,8 +262,7 @@ Aural/
 │   └── KeyboardShortcut.swift      # Keyboard shortcut configuration
 ├── Services/
 │   ├── AudioRecorder.swift         # Audio recording with AVFoundation
-│   ├── AudioProcessor.swift        # Audio speed manipulation
-│   ├── WhisperService.swift        # OpenAI Whisper API integration
+│   ├── CloudTranscriptionService.swift # OpenAI / Groq API integration
 │   ├── HotkeyMonitor.swift         # Global hotkey monitoring
 │   ├── TextInjectionService.swift  # Accessibility-based text typing
 │   ├── VocabularyService.swift     # Custom word replacement

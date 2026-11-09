@@ -12,6 +12,13 @@ struct HotkeyConfiguration: Equatable {
         modifiers: .maskSecondaryFn
     )
 
+    var hasFnSystemConflict: Bool {
+        guard modifiers.contains(.maskSecondaryFn) else { return false }
+        CFPreferencesAppSynchronize("com.apple.HIToolbox" as CFString)
+        let usage = CFPreferencesCopyAppValue("AppleFnUsageType" as CFString, "com.apple.HIToolbox" as CFString) as? Int
+        return usage != 0
+    }
+
     var displayString: String {
         var components: [String] = []
 

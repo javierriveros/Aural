@@ -40,23 +40,3 @@ class AudioRecorderMock: AudioRecorderProtocol {
         return stopRecordingReturnValue
     }
 }
-
-class AudioProcessorMock: AudioProcessorProtocol {
-    var speedUpAudioCalled = false
-    var estimateCostSavingsCalled = false
-
-    var speedUpAudioHash: [URL: URL] = [:]
-
-    func speedUpAudio(url: URL, speedMultiplier: Float) async throws -> URL {
-        speedUpAudioCalled = true
-        if let output = speedUpAudioHash[url] {
-            return output
-        }
-        return url // Default pass-through
-    }
-
-    func estimateCostSavings(duration: TimeInterval, speedMultiplier: Float) -> Double {
-        estimateCostSavingsCalled = true
-        return 0.0
-    }
-}

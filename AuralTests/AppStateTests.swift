@@ -4,7 +4,6 @@ import XCTest
 final class AppStateTests: XCTestCase {
     var appState: AppState!
     var audioRecorderMock: AudioRecorderMock!
-    var audioProcessorMock: AudioProcessorMock!
 
     override func setUp() {
         super.setUp()
@@ -13,18 +12,13 @@ final class AppStateTests: XCTestCase {
         UserDefaults.standard.removePersistentDomain(forName: domain)
 
         audioRecorderMock = AudioRecorderMock()
-        audioProcessorMock = AudioProcessorMock()
 
-        appState = AppState(
-            audioRecorder: audioRecorderMock,
-            audioProcessor: audioProcessorMock
-        )
+        appState = AppState(audioRecorder: audioRecorderMock)
     }
 
     override func tearDown() {
         appState = nil
         audioRecorderMock = nil
-        audioProcessorMock = nil
         super.tearDown()
     }
 
@@ -32,7 +26,6 @@ final class AppStateTests: XCTestCase {
         XCTAssertEqual(appState.transcriptionMode, .cloud)
         XCTAssertEqual(appState.selectedCloudProvider, .openai)
         XCTAssertTrue(appState.showFloatingWidget)
-        XCTAssertEqual(appState.audioSpeedMultiplier, 1.0)
         XCTAssertTrue(appState.textInjectionEnabled)
     }
 
@@ -92,7 +85,6 @@ final class AppStateTests: XCTestCase {
     func testDependencyInjection() {
         // Verify that the appState is using our mocks
         XCTAssertIdentical(appState.audioRecorder, audioRecorderMock)
-        XCTAssertIdentical(appState.audioProcessor, audioProcessorMock)
     }
 
     // MARK: - Transcription configuration

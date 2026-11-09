@@ -12,7 +12,6 @@ final class AppState {
 
     let soundPlayer = SoundPlayer.shared
     let audioLevelMonitor = AudioLevelMonitor()
-    let audioProcessor: AudioProcessorProtocol
     let hotkeyMonitor = HotkeyMonitor()
     let voiceCommandProcessor = VoiceCommandProcessor()
     let textInjectionService = TextInjectionService()
@@ -21,8 +20,8 @@ final class AppState {
 
     private let floatingWidget = FloatingWidgetController()
     private let waveformWindow = WaveformWindowController()
-    private(set) var openAIService = OpenAIService()
-    private(set) var groqService = GroqService()
+    private(set) var openAIService: CloudTranscriptionService
+    private(set) var groqService: CloudTranscriptionService
     private var localWhisperService: LocalWhisperService?
     private(set) var localParakeetService: LocalParakeetService?
 
@@ -123,16 +122,6 @@ final class AppState {
         }
     }
 
-    var audioSpeedMultiplier: Float {
-        get {
-            let value = UserDefaults.standard.float(forKey: UserDefaultsKeys.audioSpeedMultiplier)
-            return value > 0 ? value : 1.0
-        }
-        set {
-            UserDefaults.standard.set(newValue, forKey: UserDefaultsKeys.audioSpeedMultiplier)
-        }
-    }
-
     var textInjectionEnabled: Bool {
         get { UserDefaults.standard.bool(forKey: UserDefaultsKeys.textInjectionEnabled) }
         set { UserDefaults.standard.set(newValue, forKey: UserDefaultsKeys.textInjectionEnabled) }
@@ -157,12 +146,11 @@ final class AppState {
         }
     }
 
-    init(
-        audioRecorder: AudioRecorderProtocol = AudioRecorder(),
-        audioProcessor: AudioProcessorProtocol = AudioProcessor()
-    ) {
+    init(audioRecorder: AudioRecorderProtocol = AudioRecorder()) {
         self.audioRecorder = audioRecorder
-        self.audioProcessor = audioProcessor
+        let vocabulary = vocabularyService
+        openAIService = CloudTranscriptionService(provider: .openai) { vocabulary.transcriptionPrompt }
+        groqService = CloudTranscriptionService(provider: .groq) { vocabulary.transcriptionPrompt }
 
         // Load initial values from UserDefaults
         let modeRaw = UserDefaults.standard.string(forKey: UserDefaultsKeys.transcriptionMode) ?? ""
@@ -175,7 +163,6 @@ final class AppState {
 
         UserDefaults.standard.register(defaults: [
             UserDefaultsKeys.showFloatingWidget: true,
-            UserDefaultsKeys.audioSpeedMultiplier: 1.0,
             UserDefaultsKeys.textInjectionEnabled: true,
             UserDefaultsKeys.transcriptionMode: TranscriptionMode.cloud.rawValue,
             UserDefaultsKeys.selectedCloudProvider: CloudProvider.openai.rawValue,
@@ -386,22 +373,19 @@ final class AppState {
         updateFloatingWidget()
 
         do {
-            let processedURL: URL
-            if audioSpeedMultiplier != 1.0 {
-                processedURL = try await audioProcessor.speedUpAudio(
-                    url: url,
-                    speedMultiplier: audioSpeedMultiplier
-                )
-                try? FileManager.default.removeItem(at: url)
-            } else {
-                processedURL = url
-            }
-
             let provider = try getTranscriptionProvider()
-            let rawTranscription = try await provider.transcribe(audioURL: processedURL)
+            let rawTranscription = try await provider.transcribe(audioURL: url)
             let cleanedText = textCleanupService.cleanup(rawTranscription)
             let withVocabulary = vocabularyService.applyWordBoundaryReplacements(to: cleanedText)
             let transcriptionText = voiceCommandProcessor.process(withVocabulary)
+
+            if transcriptionText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                FileManager.default.safelyRemoveItem(at: url)
+                isTranscribing = false
+                updateFloatingWidget()
+                return
+            }
+
             lastTranscription = transcriptionText
 
             if textInjectionEnabled {
@@ -423,7 +407,7 @@ final class AppState {
 
             saveTranscription(text: transcriptionText, duration: duration, cost: cost, providerType: providerType, providerName: providerName)
 
-            FileManager.default.safelyRemoveItem(at: processedURL)
+            FileManager.default.safelyRemoveItem(at: url)
 
             soundPlayer.playTranscriptionComplete()
         } catch {
@@ -568,7 +552,7 @@ final class AppState {
 
         switch selectedCloudProvider {
         case .openai:
-            return (duration / 60.0) * APIConstants.whisperPricePerMinute
+            return (duration / 60.0) * APIConstants.openAIPricePerMinute
         case .groq:
             return 0.0 // Currently free
         }

@@ -5,7 +5,7 @@ final class CloudProviderTests: XCTestCase {
     func testOpenAIEndpoints() {
         let provider = CloudProvider.openai
         XCTAssertEqual(provider.apiEndpoint.absoluteString, "https://api.openai.com/v1/audio/transcriptions")
-        XCTAssertEqual(provider.defaultModel, "whisper-1")
+        XCTAssertEqual(provider.defaultModel, "gpt-4o-mini-transcribe")
     }
 
     func testGroqEndpoints() {
