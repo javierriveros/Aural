@@ -3,7 +3,7 @@ import SwiftUI
 
 final class WaveformWindowController {
     private var panel: NSPanel?
-    private var hostingView: NSHostingView<OrbRecordingView>?
+    private var hostingView: NSHostingView<StatusPillView>?
     private var levelMonitor: AudioLevelMonitor?
     var onTap: (() -> Void)?
 
@@ -16,17 +16,13 @@ final class WaveformWindowController {
     }
 
     private func setupPanel() {
-        let contentView = OrbRecordingView(
-            duration: 0,
-            isLocked: false,
-            audioLevel: 0.0
-        ) { [weak self] in
+        let contentView = StatusPillView(state: .idle, audioLevel: 0) { [weak self] in
             self?.onTap?()
         }
         let hostingView = NSHostingView(rootView: contentView)
 
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 480, height: 460),
+            contentRect: NSRect(x: 0, y: 0, width: 280, height: 64),
             styleMask: [.nonactivatingPanel, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -47,15 +43,15 @@ final class WaveformWindowController {
         self.hostingView = hostingView
     }
 
-    func show(duration: TimeInterval, isLocked: Bool, levelMonitor: AudioLevelMonitor) {
+    func show(state: WidgetState, levelMonitor: AudioLevelMonitor) {
         guard let panel = panel else { return }
 
         self.levelMonitor = levelMonitor
 
-        updateState(duration: duration, isLocked: isLocked)
+        updateState(state)
 
         if !panel.isVisible {
-            positionPanelAtCenter()
+            positionPanelAtBottom()
         }
 
         panel.orderFrontRegardless()
@@ -66,28 +62,25 @@ final class WaveformWindowController {
         levelMonitor = nil
     }
 
-    func updateState(duration: TimeInterval, isLocked: Bool) {
+    private func updateState(_ state: WidgetState) {
         guard let hostingView = hostingView else { return }
 
-        let audioLevel = levelMonitor?.currentLevel ?? 0.0
-
-        hostingView.rootView = OrbRecordingView(
-            duration: duration,
-            isLocked: isLocked,
-            audioLevel: audioLevel
+        hostingView.rootView = StatusPillView(
+            state: state,
+            audioLevel: levelMonitor?.currentLevel ?? 0.0
         ) { [weak self] in
             self?.onTap?()
         }
     }
 
-    private func positionPanelAtCenter() {
+    private func positionPanelAtBottom() {
         guard let panel = panel, let screen = NSScreen.main else { return }
 
         let screenFrame = screen.visibleFrame
         let panelSize = panel.frame.size
 
         let xPos = screenFrame.midX - (panelSize.width / 2)
-        let yPos = screenFrame.midY - (panelSize.height / 2)
+        let yPos = screenFrame.minY + 24
 
         panel.setFrameOrigin(NSPoint(x: xPos, y: yPos))
     }

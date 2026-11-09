@@ -7,6 +7,8 @@ enum WidgetDisplayMode: String, CaseIterable, Codable, Identifiable {
 
     var id: String { rawValue }
 
+    var displayName: String { self == .waveform ? "Pill" : rawValue }
+
     var description: String {
         switch self {
         case .none:
@@ -14,7 +16,7 @@ enum WidgetDisplayMode: String, CaseIterable, Codable, Identifiable {
         case .simple:
             return "Compact widget with mic icon"
         case .waveform:
-            return "Animated orb visualizer during recording"
+            return "Compact status pill at the bottom of the screen"
         }
     }
 

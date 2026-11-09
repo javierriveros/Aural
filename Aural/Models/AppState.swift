@@ -1,6 +1,7 @@
 import AppKit
 import AVFoundation
 import Foundation
+import ServiceManagement
 import SwiftData
 
 @Observable
@@ -40,6 +41,7 @@ final class AppState {
     /// Drives the Settings sheet. Lives here so menu commands (⌘,) and
     /// keyboard shortcuts can open Settings, not just the in-window button.
     var showSettings = false
+    var openMainWindow: (() -> Void)?
 
     /// Whether the user has finished the first-run setup flow.
     var hasCompletedSetup: Bool {
@@ -70,6 +72,28 @@ final class AppState {
         }
     }
     private var recordingStartTime: Date?
+    private var notice: WidgetState?
+    private var noticeTask: Task<Void, Never>?
+
+    var launchAtLogin: Bool {
+        get {
+            access(keyPath: \.launchAtLogin)
+            return SMAppService.mainApp.status == .enabled
+        }
+        set {
+            withMutation(keyPath: \.launchAtLogin) {
+                do {
+                    if newValue { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
+                    if newValue, SMAppService.mainApp.status == .requiresApproval {
+                        SMAppService.openSystemSettingsLoginItems()
+                        lastError = "Launch at Login: approve Aural in System Settings"
+                    }
+                } catch {
+                    lastError = "Launch at Login: \(error.localizedDescription)"
+                }
+            }
+        }
+    }
     private var widgetUpdateTimer: Timer?
 
     var recordingMode: RecordingMode {
@@ -182,7 +206,8 @@ final class AppState {
 
     private func setupWaveformWindowCallbacks() {
         waveformWindow.onTap = { [weak self] in
-            self?.handleWidgetTap()
+            guard let self, isRecordingLocked else { return }
+            stopRecording()
         }
     }
 
@@ -230,7 +255,7 @@ final class AppState {
                     ClipboardService.copy(transcription)
                 }
             case .showHideWindow:
-                NSApp.activate(ignoringOtherApps: true)
+                openMainWindow?()
             case .openSettings:
                 showSettings = true
             case .clearHistory:
@@ -287,7 +312,7 @@ final class AppState {
             stopRecording()
         } else if isRecording && !isRecordingLocked {
             isRecordingLocked = true
-            updateRecordingVisualization()
+            updateFloatingWidget()
         } else if !isRecording {
             startRecording(locked: true)
         }
@@ -297,7 +322,8 @@ final class AppState {
     private func ensureTranscriptionConfigured() -> Bool {
         guard isTranscriptionConfigured else {
             requiresSetup = true
-            updateFloatingWidget()
+            if !hasCompletedSetup { openMainWindow?() }
+            showNotice("Finish setup in Aural", isError: true)
             return false
         }
         return true
@@ -309,12 +335,14 @@ final class AppState {
 
         audioLevelMonitor.reset()
         recordingStartTime = Date()
+        notice = nil
+        noticeTask?.cancel()
 
         do {
             _ = try audioRecorder.startRecording()
         } catch {
             soundPlayer.playError()
-            updateFloatingWidget()
+            showNotice("Couldn't start recording", isError: true)
             return
         }
 
@@ -323,7 +351,7 @@ final class AppState {
         isRecordingLocked = locked
         updateFloatingWidgetVisibility()
         startWidgetUpdateTimer()
-        updateRecordingVisualization()
+        updateFloatingWidget()
     }
 
     private func stopRecording() {
@@ -333,9 +361,12 @@ final class AppState {
         stopWidgetUpdateTimer()
         isRecording = false
         isRecordingLocked = false
+
+        let url = audioRecorder.stopRecording()
+        isTranscribing = url != nil
         updateFloatingWidgetVisibility()
 
-        guard let url = audioRecorder.stopRecording() else { return }
+        guard let url else { return }
         Task { @MainActor in
             await handleRecordingComplete(url: url)
         }
@@ -346,11 +377,11 @@ final class AppState {
 
         if duration < 0.25 {
             FileManager.default.safelyRemoveItem(at: url)
+            isTranscribing = false
             updateFloatingWidget()
             return
         }
 
-        isTranscribing = true
         lastError = nil
         updateFloatingWidget()
 
@@ -378,9 +409,11 @@ final class AppState {
                     try textInjectionService.injectText(transcriptionText)
                 } catch {
                     ClipboardService.copy(transcriptionText)
+                    showNotice("Copied — press ⌘V", isError: false)
                 }
             } else {
                 ClipboardService.copy(transcriptionText)
+                showNotice("Copied — press ⌘V", isError: false)
             }
 
             // Calculate cost using provider-specific logic
@@ -395,6 +428,7 @@ final class AppState {
             soundPlayer.playTranscriptionComplete()
         } catch {
             lastError = error.localizedDescription
+            showNotice("Transcription failed", isError: true)
             soundPlayer.playError()
             FileManager.default.safelyRemoveItem(at: url)
         }
@@ -419,63 +453,50 @@ final class AppState {
     private func updateFloatingWidgetVisibility() {
         switch widgetDisplayMode {
         case .none:
-            // Hide both widgets
             floatingWidget.hide()
             waveformWindow.hide()
         case .simple:
-            // Show simple widget, hide waveform window
             floatingWidget.show()
-            updateFloatingWidget()
             waveformWindow.hide()
         case .waveform:
-            // In waveform mode: only show waveform window when recording, nothing when idle
-            if isRecording {
-                floatingWidget.hide()
-                // Waveform window is shown/updated by updateRecordingVisualization()
-            } else {
-                // Hide both widgets when idle in waveform mode
-                floatingWidget.hide()
-                waveformWindow.hide()
-            }
+            floatingWidget.hide()
         }
+        updateFloatingWidget()
+    }
+
+    private func showNotice(_ message: String, isError: Bool) {
+        notice = .notice(message, isError: isError)
+        noticeTask?.cancel()
+        noticeTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled, let self else { return }
+            self.notice = nil
+            self.updateFloatingWidget()
+        }
+        updateFloatingWidget()
     }
 
     private func updateFloatingWidget() {
-        // Don't update simple widget when in waveform mode
-        // (in waveform mode, only the waveform window is shown during recording, nothing when idle)
-        if widgetDisplayMode == .waveform {
-            return
-        }
-
         let state: WidgetState
         if isTranscribing {
             state = .transcribing
         } else if isRecording {
-            let duration = audioRecorder.recordingDuration
-            state = .recording(duration: duration, isLocked: isRecordingLocked)
+            state = .recording(duration: audioRecorder.recordingDuration, isLocked: isRecordingLocked)
         } else {
-            state = .idle
+            state = notice ?? .idle
         }
-        floatingWidget.updateState(state)
-    }
 
-    private func updateRecordingVisualization() {
         switch widgetDisplayMode {
         case .none:
-            // No visualization
             break
         case .simple:
-            // Update simple widget
-            updateFloatingWidget()
+            floatingWidget.updateState(state)
         case .waveform:
-            // Show waveform window, hide simple widget
-            floatingWidget.hide()
-            let duration = audioRecorder.recordingDuration
-            waveformWindow.show(
-                duration: duration,
-                isLocked: isRecordingLocked,
-                levelMonitor: audioLevelMonitor
-            )
+            if case .idle = state {
+                waveformWindow.hide()
+            } else {
+                waveformWindow.show(state: state, levelMonitor: audioLevelMonitor)
+            }
         }
     }
 
@@ -488,14 +509,7 @@ final class AppState {
 
         // Create timer and add to run loop with common mode for better performance
         let timer = Timer(timeInterval: updateInterval, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            if self.widgetDisplayMode == .waveform && self.isRecording {
-                // Update waveform window with latest audio levels at 60 FPS
-                self.updateRecordingVisualization()
-            } else {
-                // Update simple widget at 10 FPS (sufficient for duration counter)
-                self.updateFloatingWidget()
-            }
+            self?.updateFloatingWidget()
         }
 
         RunLoop.current.add(timer, forMode: .common)

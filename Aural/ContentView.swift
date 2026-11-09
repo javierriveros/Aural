@@ -10,6 +10,8 @@ import SwiftData
 import SwiftUI
 
 struct ContentView: View {
+    private static var hasLaunched = false
+    @Environment(\.dismissWindow) private var dismissWindow
     @Environment(AppState.self) private var appState
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transcription.timestamp, order: .reverse) private var transcriptions: [Transcription]
@@ -218,11 +220,13 @@ struct ContentView: View {
                 .interactiveDismissDisabled(true)
         }
         .onAppear {
-            appState.modelContext = modelContext
             startPermissionCheck()
             if !appState.hasCompletedSetup {
                 showSetup = true
+            } else if !Self.hasLaunched {
+                dismissWindow(id: AuralApp.mainWindowID)
             }
+            Self.hasLaunched = true
         }
         .onDisappear {
             stopPermissionCheck()

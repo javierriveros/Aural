@@ -145,6 +145,12 @@ struct SettingsView: View {
                     Text(recordingMode.description)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+
+                    Toggle("Launch at Login", isOn: Binding(
+                        get: { appState.launchAtLogin },
+                        set: { appState.launchAtLogin = $0 }
+                    ))
+                    .toggleStyle(.switch)
                 } header: {
                     Text("Recording")
                         .font(.headline)
@@ -153,7 +159,7 @@ struct SettingsView: View {
                 Section {
                     Picker("Widget Display Style", selection: $widgetDisplayMode) {
                         ForEach(WidgetDisplayMode.allCases) { mode in
-                            Text(mode.rawValue).tag(mode)
+                            Text(mode.displayName).tag(mode)
                         }
                     }
                     .pickerStyle(.segmented)

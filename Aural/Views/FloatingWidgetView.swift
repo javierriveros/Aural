@@ -4,6 +4,7 @@ enum WidgetState {
     case idle
     case recording(duration: TimeInterval, isLocked: Bool)
     case transcribing
+    case notice(String, isError: Bool)
 }
 
 struct FloatingWidgetView: View {
@@ -106,6 +107,8 @@ struct FloatingWidgetView: View {
         case .transcribing:
             ProgressView()
                 .scaleEffect(0.8)
+        case .notice(_, let isError):
+            Image(systemName: isError ? "exclamationmark.triangle.fill" : "doc.on.clipboard")
         }
     }
 
@@ -117,6 +120,8 @@ struct FloatingWidgetView: View {
             return isLocked ? BrandColors.warning : BrandColors.error
         case .transcribing:
             return BrandColors.primaryBlue
+        case .notice(_, let isError):
+            return isError ? BrandColors.error : BrandColors.success
         }
     }
 
@@ -128,6 +133,8 @@ struct FloatingWidgetView: View {
             return isLocked ? "Recording (Locked)" : "Recording"
         case .transcribing:
             return "Transcribing"
+        case .notice(let message, _):
+            return message
         }
     }
 
@@ -139,6 +146,8 @@ struct FloatingWidgetView: View {
             return formatDuration(duration)
         case .transcribing:
             return "Processing audio..."
+        case .notice:
+            return nil
         }
     }
 

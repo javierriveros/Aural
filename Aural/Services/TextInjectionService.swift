@@ -28,7 +28,54 @@ final class TextInjectionService {
             throw InjectionError.fallbackToClipboard
         }
 
-        paste(text)
+        paste(Self.adjust(text, precedingText: textBeforeCursor()))
+    }
+
+    static func adjust(_ text: String, precedingText: String?) -> String {
+        guard let preceding = precedingText, let first = text.first, !first.isWhitespace else { return text }
+        guard let last = preceding.last, !last.isNewline else { return capitalizingFirst(text) }
+
+        let trailing = preceding.last { !$0.isWhitespace }
+        let startsSentence = trailing.map { ".!?".contains($0) } ?? true
+        var result = startsSentence ? capitalizingFirst(text) : text
+        if !last.isWhitespace, !"([{".contains(last), !".,!?;:)".contains(first) {
+            result = " " + result
+        }
+        return result
+    }
+
+    private static func capitalizingFirst(_ text: String) -> String {
+        guard let first = text.first else { return text }
+        return first.uppercased() + text.dropFirst()
+    }
+
+    private static let contextLength = 8
+    private static let axTimeout: Float = 0.25
+
+    private func textBeforeCursor() -> String? {
+        let systemWide = AXUIElementCreateSystemWide()
+        AXUIElementSetMessagingTimeout(systemWide, Self.axTimeout)
+        var focusedRef: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute as CFString, &focusedRef) == .success,
+              let focusedRef, CFGetTypeID(focusedRef) == AXUIElementGetTypeID() else { return nil }
+        let element = unsafeBitCast(focusedRef, to: AXUIElement.self)
+        AXUIElementSetMessagingTimeout(element, Self.axTimeout)
+
+        var selectionRef: CFTypeRef?
+        var selection = CFRange()
+        guard AXUIElementCopyAttributeValue(element, kAXSelectedTextRangeAttribute as CFString, &selectionRef) == .success,
+              let selectionRef, CFGetTypeID(selectionRef) == AXValueGetTypeID(),
+              AXValueGetValue(unsafeBitCast(selectionRef, to: AXValue.self), .cfRange, &selection),
+              selection.location >= 0 else { return nil }
+
+        let start = max(0, selection.location - Self.contextLength)
+        var window = CFRange(location: start, length: selection.location - start)
+        guard window.length > 0 else { return "" }
+        guard let windowValue = AXValueCreate(.cfRange, &window) else { return nil }
+
+        var textRef: CFTypeRef?
+        guard AXUIElementCopyParameterizedAttributeValue(element, kAXStringForRangeParameterizedAttribute as CFString, windowValue, &textRef) == .success else { return nil }
+        return textRef as? String
     }
 
     private func paste(_ text: String) {
