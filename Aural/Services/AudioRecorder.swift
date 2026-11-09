@@ -95,22 +95,38 @@ final class AudioRecorder: AudioRecorderProtocol {
 
         guard let audioFile = try? AVAudioFile(
             forWriting: audioFilename,
-            settings: [
-                AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
-                AVSampleRateKey: 44100.0,
-                AVNumberOfChannelsKey: 1,
-                AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
-            ]
+            settings: Self.fileSettings
         ) else {
             state = .failed(RecordingError.audioEngineFailure)
             throw RecordingError.audioEngineFailure
+        }
+
+        var downmixer: AVAudioConverter?
+        if inputFormat.channelCount != 1 {
+            guard let monoFormat = AVAudioFormat(
+                commonFormat: .pcmFormatFloat32,
+                sampleRate: inputFormat.sampleRate,
+                channels: 1,
+                interleaved: false
+            ), let converter = AVAudioConverter(from: inputFormat, to: monoFormat) else {
+                state = .failed(RecordingError.audioEngineFailure)
+                throw RecordingError.audioEngineFailure
+            }
+            downmixer = converter
         }
 
         inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { [weak self] buffer, _ in
             guard let self = self else { return }
 
             do {
-                try audioFile.write(from: buffer)
+                var output = buffer
+                if let downmixer {
+                    guard let mono = Self.monoBuffer(from: buffer, using: downmixer) else {
+                        throw RecordingError.audioEngineFailure
+                    }
+                    output = mono
+                }
+                try audioFile.write(from: output)
                 self.writeErrorCount = 0
             } catch {
                 self.writeErrorCount += 1
@@ -142,6 +158,26 @@ final class AudioRecorder: AudioRecorderProtocol {
         startTimer()
 
         return audioFilename
+    }
+
+    static let fileSettings: [String: Any] = [
+        AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
+        AVSampleRateKey: 44100.0,
+        AVNumberOfChannelsKey: 1,
+        AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+    ]
+
+    static func monoBuffer(from buffer: AVAudioPCMBuffer, using converter: AVAudioConverter) -> AVAudioPCMBuffer? {
+        guard let output = AVAudioPCMBuffer(
+            pcmFormat: converter.outputFormat,
+            frameCapacity: buffer.frameLength
+        ) else { return nil }
+        do {
+            try converter.convert(to: output, from: buffer)
+        } catch {
+            return nil
+        }
+        return output
     }
 
     func stopRecording() -> URL? {
