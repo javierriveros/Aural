@@ -1,4 +1,5 @@
 import AppKit
+import AVFoundation
 import Foundation
 import SwiftData
 
@@ -68,7 +69,6 @@ final class AppState {
             return modelDownloadManager.isModelDownloaded(model)
         }
     }
-    private var recordingURL: URL?
     private var recordingStartTime: Date?
     private var widgetUpdateTimer: Timer?
 
@@ -188,13 +188,17 @@ final class AppState {
 
     private func setupAudioLevelMonitor() {
         audioRecorder.setLevelMonitor(audioLevelMonitor)
+
+        if hasCompletedSetup, AVCaptureDevice.authorizationStatus(for: .audio) == .notDetermined {
+            Task { [audioRecorder] in _ = await audioRecorder.requestPermission() }
+        }
     }
 
     private func handleWidgetTap() {
         if isRecording {
             if isRecordingLocked { stopRecording() }
-        } else if !isTranscribing {
-            startLockedRecording()
+        } else {
+            startRecording(locked: true)
         }
     }
 
@@ -274,7 +278,7 @@ final class AppState {
         case .tapToLock, .hybrid:
             toggleLockedRecording()
         case .holdOnly:
-            break
+            handleKeyUp()
         }
     }
 
@@ -285,7 +289,7 @@ final class AppState {
             isRecordingLocked = true
             updateRecordingVisualization()
         } else if !isRecording {
-            startLockedRecording()
+            startRecording(locked: true)
         }
     }
 
@@ -299,50 +303,27 @@ final class AppState {
         return true
     }
 
-    private func startRecording() {
-        guard !isRecording else { return }
-        guard ensureTranscriptionConfigured() else { return }
-        soundPlayer.playRecordingStart()
-        audioLevelMonitor.reset()
-
-        Task { @MainActor in
-            do {
-                recordingStartTime = Date()
-                recordingURL = try await audioRecorder.startRecording()
-                isRecording = true
-                isRecordingLocked = false
-                updateFloatingWidgetVisibility()
-                startWidgetUpdateTimer()
-                updateRecordingVisualization()
-            } catch {
-                soundPlayer.playError()
-                updateFloatingWidget()
-            }
-        }
-    }
-
-    private func startLockedRecording() {
-        guard !isRecording else { return }
+    private func startRecording(locked: Bool = false) {
+        guard !isRecording, !isTranscribing else { return }
         guard ensureTranscriptionConfigured() else { return }
 
-        soundPlayer.playLockEngaged()
         audioLevelMonitor.reset()
+        recordingStartTime = Date()
 
-        Task { @MainActor in
-            do {
-                recordingStartTime = Date()
-                recordingURL = try await audioRecorder.startRecording()
-                isRecording = true
-                isRecordingLocked = true
-                updateFloatingWidgetVisibility()
-                startWidgetUpdateTimer()
-                updateRecordingVisualization()
-            } catch {
-                soundPlayer.playError()
-                print("Failed to start recording: \(error)")
-                updateFloatingWidget()
-            }
+        do {
+            _ = try audioRecorder.startRecording()
+        } catch {
+            soundPlayer.playError()
+            updateFloatingWidget()
+            return
         }
+
+        if locked { soundPlayer.playLockEngaged() } else { soundPlayer.playRecordingStart() }
+        isRecording = true
+        isRecordingLocked = locked
+        updateFloatingWidgetVisibility()
+        startWidgetUpdateTimer()
+        updateRecordingVisualization()
     }
 
     private func stopRecording() {
@@ -350,21 +331,20 @@ final class AppState {
 
         soundPlayer.playRecordingStop()
         stopWidgetUpdateTimer()
+        isRecording = false
+        isRecordingLocked = false
+        updateFloatingWidgetVisibility()
 
+        guard let url = audioRecorder.stopRecording() else { return }
         Task { @MainActor in
-            if let url = audioRecorder.stopRecording() {
-                isRecording = false
-                isRecordingLocked = false
-                updateFloatingWidgetVisibility()
-                await handleRecordingComplete(url: url)
-            }
+            await handleRecordingComplete(url: url)
         }
     }
 
     private func handleRecordingComplete(url: URL) async {
         let duration = recordingStartTime.map { Date().timeIntervalSince($0) } ?? 0
 
-        if duration <= 1.0 {
+        if duration < 0.25 {
             FileManager.default.safelyRemoveItem(at: url)
             updateFloatingWidget()
             return
@@ -616,6 +596,7 @@ extension AppState {
     /// Validates a cloud API key by saving it on the provider's service and
     /// running a short test transcription. Throws if the key is rejected.
     func validateCloudKey(provider: CloudProvider, key: String) async throws {
+        guard await audioRecorder.requestPermission() else { throw RecordingError.permissionDenied }
         let service: TranscriptionProvider
         switch provider {
         case .openai:
@@ -637,7 +618,7 @@ extension AppState {
             .appendingPathExtension("m4a")
 
         let recorder = AudioRecorder()
-        _ = try await recorder.startRecording()
+        _ = try recorder.startRecording()
         try await Task.sleep(nanoseconds: 500_000_000)
 
         guard let recordedURL = recorder.stopRecording() else {

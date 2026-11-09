@@ -44,7 +44,7 @@ protocol AudioRecorderProtocol: AnyObject {
 
     func setLevelMonitor(_ monitor: AudioLevelMonitor)
     func requestPermission() async -> Bool
-    func startRecording() async throws -> URL
+    func startRecording() throws -> URL
     func stopRecording() -> URL?
 }
 
@@ -76,8 +76,12 @@ final class AudioRecorder: AudioRecorderProtocol {
         }
     }
 
-    func startRecording() async throws -> URL {
-        guard await requestPermission() else {
+    func startRecording() throws -> URL {
+        let status = AVCaptureDevice.authorizationStatus(for: .audio)
+        if status == .notDetermined {
+            Task { _ = await requestPermission() }
+        }
+        guard status == .authorized else {
             state = .failed(RecordingError.permissionDenied)
             throw RecordingError.permissionDenied
         }

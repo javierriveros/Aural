@@ -38,7 +38,7 @@ CI (`.github/workflows/ci.yml`) runs three jobs on macOS: SwiftLint, build+test 
 A single `@Observable final class AppState` owns all services and orchestrates the entire flow. It is the dependency-injection root — services are constructed and held here, not resolved globally. When wiring new behavior, the wiring usually lives in `AppState`'s `setup*Callbacks()` methods and the recording state machine. Settings are persisted to `UserDefaults` (keys in `UserDefaultsKeys`) and read back in `init`.
 
 ### Recording state machine
-`HotkeyMonitor` fires global key events → `AppState.handleKeyDown/handleKeyUp/handleQuickTap` interpret them according to the active `RecordingMode` (`.holdOnly`, `.tapToLock`, `.hybrid`). Recordings shorter than 1.0s are discarded. Recording start/stop drives the floating widget and waveform/orb visualizations.
+`HotkeyMonitor` fires global key events → `AppState.handleKeyDown/handleKeyUp/handleQuickTap` interpret them according to the active `RecordingMode` (`.holdOnly`, `.tapToLock`, `.hybrid`). Recordings shorter than 0.25s are discarded. Recording start/stop drives the floating widget and waveform/orb visualizations.
 
 ### Transcription pipeline (`handleRecordingComplete`)
 The post-recording flow is a fixed, ordered pipeline — preserve this order when modifying:

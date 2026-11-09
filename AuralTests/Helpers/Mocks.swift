@@ -25,7 +25,7 @@ class AudioRecorderMock: AudioRecorderProtocol {
         return requestPermissionReturnValue
     }
 
-    func startRecording() async throws -> URL {
+    func startRecording() throws -> URL {
         startRecordingCalled = true
         if let url = startRecordingReturnValue {
             state = .recording

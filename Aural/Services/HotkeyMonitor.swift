@@ -12,6 +12,7 @@ final class HotkeyMonitor {
     private(set) var state: MonitoringState = .inactive
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
+    private var permissionTimer: Timer?
 
     var onKeyDown: (() -> Void)?
     var onKeyUp: (() -> Void)?
@@ -45,6 +46,7 @@ final class HotkeyMonitor {
     func startMonitoring() -> Bool {
         guard checkAccessibilityPermission() else {
             state = .permissionDenied
+            startPermissionPolling()
             return false
         }
 
@@ -65,9 +67,11 @@ final class HotkeyMonitor {
             userInfo: Unsafely.toOpaque(self)
         ) else {
             state = .permissionDenied
+            startPermissionPolling()
             return false
         }
 
+        stopPermissionPolling()
         let runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
         CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
         CGEvent.tapEnable(tap: tap, enable: true)
@@ -79,7 +83,21 @@ final class HotkeyMonitor {
         return true
     }
 
+    private func startPermissionPolling() {
+        guard permissionTimer == nil else { return }
+        permissionTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
+            guard let self, AXIsProcessTrusted() else { return }
+            _ = self.startMonitoring()
+        }
+    }
+
+    private func stopPermissionPolling() {
+        permissionTimer?.invalidate()
+        permissionTimer = nil
+    }
+
     func stopMonitoring() {
+        stopPermissionPolling()
         if let tap = eventTap {
             CGEvent.tapEnable(tap: tap, enable: false)
             CFMachPortInvalidate(tap)
@@ -94,7 +112,12 @@ final class HotkeyMonitor {
         state = .inactive
     }
 
-    private func handleEvent(proxy: CGEventTapProxy, type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent> {
+    private func handleEvent(proxy: CGEventTapProxy, type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
+        if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+            if let tap = eventTap { CGEvent.tapEnable(tap: tap, enable: true) }
+            return Unmanaged.passUnretained(event)
+        }
+
         // Handle modifier-only hotkeys (like Fn key)
         if type == .flagsChanged && hotkeyConfig.modifiers.contains(.maskSecondaryFn) {
             let flags = event.flags
@@ -103,7 +126,7 @@ final class HotkeyMonitor {
             if fnKeyPressed && !isHotkeyCurrentlyPressed {
                 keyPressStartTime = Date()
                 isHotkeyCurrentlyPressed = true
-                onKeyDown?()
+                fire(onKeyDown)
             } else if !fnKeyPressed && isHotkeyCurrentlyPressed {
                 isHotkeyCurrentlyPressed = false
                 handleKeyRelease()
@@ -112,21 +135,26 @@ final class HotkeyMonitor {
 
         // Handle regular key presses with modifiers
         if type == .keyDown || type == .keyUp {
-            if hotkeyConfig.matches(event: event) {
+            let keyCode = CGKeyCode(event.getIntegerValueField(.keyboardEventKeycode))
+            let isRelease = type == .keyUp && isHotkeyCurrentlyPressed && keyCode == hotkeyConfig.keyCode
+            if isRelease || hotkeyConfig.matches(event: event) {
                 if type == .keyDown && !isHotkeyCurrentlyPressed {
                     keyPressStartTime = Date()
                     isHotkeyCurrentlyPressed = true
-                    onKeyDown?()
-                    return Unmanaged.passUnretained(event)
+                    fire(onKeyDown)
                 } else if type == .keyUp && isHotkeyCurrentlyPressed {
                     isHotkeyCurrentlyPressed = false
                     handleKeyRelease()
-                    return Unmanaged.passUnretained(event)
                 }
+                if !hotkeyConfig.modifiers.contains(.maskSecondaryFn) { return nil }
             }
         }
 
         return Unmanaged.passUnretained(event)
+    }
+
+    private func fire(_ callback: (() -> Void)?) {
+        DispatchQueue.main.async { callback?() }
     }
 
     private func handleKeyRelease() {
@@ -135,14 +163,14 @@ final class HotkeyMonitor {
             let threshold = RecordingModePreferences.quickTapThreshold
 
             if pressDuration < threshold {
-                onQuickTap?()
+                fire(onQuickTap)
             } else {
-                onKeyUp?()
+                fire(onKeyUp)
             }
 
             keyPressStartTime = nil
         } else {
-            onKeyUp?()
+            fire(onKeyUp)
         }
     }
 

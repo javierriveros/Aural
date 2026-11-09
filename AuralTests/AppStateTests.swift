@@ -63,6 +63,32 @@ final class AppStateTests: XCTestCase {
     }
     */
 
+    func testKeyUpStopsRecording() throws {
+        try appState.openAIService.setAPIKey("sk-test-key")
+        audioRecorderMock.startRecordingReturnValue = URL(fileURLWithPath: "/tmp/test.m4a")
+
+        appState.hotkeyMonitor.onKeyDown?()
+        XCTAssertTrue(appState.isRecording)
+        appState.hotkeyMonitor.onKeyUp?()
+
+        XCTAssertFalse(appState.isRecording)
+        XCTAssertTrue(audioRecorderMock.stopRecordingCalled)
+    }
+
+    func testHoldOnlyQuickTapStopsRecording() throws {
+        let previous = RecordingModePreferences.mode
+        RecordingModePreferences.mode = .holdOnly
+        defer { RecordingModePreferences.mode = previous }
+        try appState.openAIService.setAPIKey("sk-test-key")
+        audioRecorderMock.startRecordingReturnValue = URL(fileURLWithPath: "/tmp/test.m4a")
+
+        appState.hotkeyMonitor.onKeyDown?()
+        XCTAssertTrue(appState.isRecording)
+        appState.hotkeyMonitor.onQuickTap?()
+
+        XCTAssertFalse(appState.isRecording)
+    }
+
     func testDependencyInjection() {
         // Verify that the appState is using our mocks
         XCTAssertIdentical(appState.audioRecorder, audioRecorderMock)
